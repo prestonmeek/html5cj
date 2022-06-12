@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+	
+	<meta title="Card Jitsu" package="com.sample.html5cj" version="1.0.0" company="Preston" />
+	<app main="Main" path="Export" file="html5cj" />
+
+	<window width="760" height="480" allow-high-dpi="true" hardware="true" background="#000000"/>
+	
+	<source path="Source" />
+	
+	<haxelib name="openfl" />
+	
+	<assets path="Assets" rename="assets" />
+	<assets path="Assets/colors.json" rename="colors" />
+	
+	<library path="Assets/card.swf" id="card" preload="true" />
+	<library path="Assets/ambient.swf" preload="true" />
+	<library path="Assets/walk.swf" preload="true" />
+	
+</project>
