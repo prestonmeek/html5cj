@@ -16,8 +16,16 @@ player1 = new Player(this, 375, 240, 1, 7, 1, 'Preston');
 player2 = new Player(this, 375, 240, 2, 14, 7, 'Jackie');
 */
 
+enum PenguinType {
+    Player;
+    Enemy;
+}
+
 class Penguin {
     private var game:Main;
+    private var type:PenguinType;
+
+    private var username:String;
 
     private var colors:Dynamic;
 
@@ -27,16 +35,22 @@ class Penguin {
     private var backArm:MovieClip;
     private var belt:MovieClip;
 
-    private var username:TextField;
+    private var nameField:TextField;
 
-    public function new(game:Main) {
+    public function new(game:Main, type:PenguinType) {
         this.game = game;
+        this.type = type;
 
         // Load the colors JSON file
         colors = Json.parse(Assets.getText('colors'));
 
         // Define the TextField for the player's username
-        username = game.getChild('tf_name1');
+        // tf_name1 is the left side (Player)
+        // tf_name2 is the right side (Enemy)
+        if (type == Player)
+            nameField = game.getChild('tf_name1');
+        else
+            nameField = game.getChild('tf_name2');
     }
 
     public function setup():Void {
@@ -48,13 +62,18 @@ class Penguin {
         // I'm not exactly sure why but this only works with the "penguin" object's children, not the object itself
         // This changes the main penguin MovieClip to the ambient/idle animation
         body.addFrameScript(body.totalFrames - 1, () -> {
-            // Remove the penguin child and re-add it as the idle animation
+            // Remove the penguin MovieClip and re-add it as the idle animation
             game.removeChild(penguin);
             setupPenguin(Assets.getMovieClip('ambient:ambient'));
         });
 
-        // Set the username text
-        username.text = 'Preston';   
+        // Set the player's username text so it is shown on the screen
+        nameField.text = username;
+    }
+
+    // Set the username text
+    public function setUsername(username:String):Void {
+        this.username = username;
     }
 
     private function setupPenguin(mc:MovieClip) {
@@ -65,8 +84,11 @@ class Penguin {
         penguin.x = 375;
         penguin.y = 240;
 
-        // For the client so that the penguin walks out from the left
-        penguin.scaleX = -1;
+        // A scaleX of -1 makes the penguin walk out from the left, so only do it for the player
+        if (type == Player)
+            penguin.scaleX = -1;
+        else
+            penguin.scaleX = 1;
 
         // Initialize the rest of the penguin's parts
         body     = cast(penguin.getChildByName('body_mc'),     MovieClip);
@@ -82,7 +104,7 @@ class Penguin {
         setBeltColor('black');
 
         // Add the main penguin body to the game
-        // The - 3 is kind of arbitrary, but it just ensures the penguin sprite is behind the help menu
+        // The - 3 is kind of arbitrary, but it just ensures the penguin sprite is behind the game UI (like the help menu)
         game.addChildAt(penguin, game.numChildren - 3);
     }
 
@@ -123,5 +145,4 @@ class Penguin {
         // Apply the ColorTransform to the necessary MovieClips
         belt.transform.colorTransform = transform;
     }
-
 }

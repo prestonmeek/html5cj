@@ -894,9 +894,9 @@ ApplicationMain.create = function(config) {
 	ManifestResources.init(config);
 	var _this = app.meta;
 	if(__map_reserved["build"] != null) {
-		_this.setReserved("build","72");
+		_this.setReserved("build","1");
 	} else {
-		_this.h["build"] = "72";
+		_this.h["build"] = "1";
 	}
 	var _this1 = app.meta;
 	if(__map_reserved["company"] != null) {
@@ -3495,10 +3495,12 @@ DocumentClass.prototype = $extend(Main.prototype,{
 	__class__: DocumentClass
 });
 var Client = function(game) {
+	this.setup = false;
 	this.port = 8080;
 	this.game = game;
 	this.ws = new WebSocket("ws://localhost:" + Std.string(this.port));
-	this.penguin = new Penguin(game);
+	this.player = new Penguin(game,PenguinType.Player);
+	this.enemy = new Penguin(game,PenguinType.Enemy);
 	this.handleEvents();
 };
 $hxClasses["Client"] = Client;
@@ -3507,30 +3509,46 @@ Client.prototype = {
 	game: null
 	,port: null
 	,ws: null
-	,penguin: null
+	,setup: null
+	,player: null
+	,enemy: null
 	,handleEvents: function() {
 		var _gthis = this;
+		var username = "Preston";
 		this.ws.onopen = function() {
-			haxe_Log.trace("Connected to server",{ fileName : "Source/Client.hx", lineNumber : 26, className : "Client", methodName : "handleEvents"});
+			haxe_Log.trace("Connected to server",{ fileName : "Source/Client.hx", lineNumber : 37, className : "Client", methodName : "handleEvents"});
 			return;
 		};
 		this.ws.onmessage = function(msg) {
-			switch(msg.data) {
+			var data = JSON.parse(msg.data);
+			switch(data.type) {
 			case "begin":
-				Message.prompt("Battle beginning...");
-				_gthis.init();
+				if(!_gthis.setup) {
+					_gthis.setup = true;
+					Message.prompt("Battle beginning...");
+					_gthis.player.setup();
+					_gthis.enemy.setup();
+				}
+				break;
+			case "get enemy username":
+				_gthis.sendPacket("send enemy username",{ "name" : username});
+				break;
+			case "set enemy username":
+				_gthis.enemy.setUsername(data.name);
+				_gthis.sendPacket("ready");
 				break;
 			case "wait":
+				_gthis.player.setUsername(username);
 				Message.prompt("Please wait for another client...",true);
 				break;
 			default:
-				haxe_Log.trace("Unknown message type: " + Std.string(msg.data),{ fileName : "Source/Client.hx", lineNumber : 37, className : "Client", methodName : "handleEvents"});
+				haxe_Log.trace("Unknown message type: " + Std.string(msg.data),{ fileName : "Source/Client.hx", lineNumber : 73, className : "Client", methodName : "handleEvents"});
 			}
 			return;
 		};
 	}
-	,init: function() {
-		this.penguin.setup();
+	,sendPacket: function(type,args) {
+		this.ws.send(JSON.stringify(Object.assign({ "type" : type},args)));
 	}
 	,__class__: Client
 };
@@ -3778,22 +3796,33 @@ Message.prompt = function(msg,loading) {
 	Message.txt.set_text(msg);
 	Message.box.set_visible(true);
 };
-var Penguin = function(game) {
+var PenguinType = $hxEnums["PenguinType"] = { __ename__ : "PenguinType", __constructs__ : ["Player","Enemy"]
+	,Player: {_hx_index:0,__enum__:"PenguinType",toString:$estr}
+	,Enemy: {_hx_index:1,__enum__:"PenguinType",toString:$estr}
+};
+var Penguin = function(game,type) {
 	this.game = game;
+	this.type = type;
 	this.colors = JSON.parse(openfl_utils_Assets.getText("colors"));
-	this.username = game.getChild("tf_name1");
+	if(type == PenguinType.Player) {
+		this.nameField = game.getChild("tf_name1");
+	} else {
+		this.nameField = game.getChild("tf_name2");
+	}
 };
 $hxClasses["Penguin"] = Penguin;
 Penguin.__name__ = "Penguin";
 Penguin.prototype = {
 	game: null
+	,type: null
+	,username: null
 	,colors: null
 	,penguin: null
 	,body: null
 	,frontArm: null
 	,backArm: null
 	,belt: null
-	,username: null
+	,nameField: null
 	,setup: function() {
 		var _gthis = this;
 		this.setupPenguin(openfl_utils_Assets.getMovieClip("walk:walk"));
@@ -3803,13 +3832,20 @@ Penguin.prototype = {
 			_gthis.setupPenguin(tmp);
 			return;
 		});
-		this.username.set_text("Preston");
+		this.nameField.set_text(this.username);
+	}
+	,setUsername: function(username) {
+		this.username = username;
 	}
 	,setupPenguin: function(mc) {
 		this.penguin = mc;
 		this.penguin.set_x(375);
 		this.penguin.set_y(240);
-		this.penguin.set_scaleX(-1);
+		if(this.type == PenguinType.Player) {
+			this.penguin.set_scaleX(-1);
+		} else {
+			this.penguin.set_scaleX(1);
+		}
 		this.body = js_Boot.__cast(this.penguin.getChildByName("body_mc") , openfl_display_MovieClip);
 		this.frontArm = js_Boot.__cast(this.penguin.getChildByName("frontArm_mc") , openfl_display_MovieClip);
 		this.backArm = js_Boot.__cast(this.penguin.getChildByName("backArm_mc") , openfl_display_MovieClip);
@@ -23410,7 +23446,7 @@ var lime_utils_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 267066;
+	this.version = 380450;
 };
 $hxClasses["lime.utils.AssetCache"] = lime_utils_AssetCache;
 lime_utils_AssetCache.__name__ = "lime.utils.AssetCache";
