@@ -64,6 +64,7 @@ class Client {
                         setup = true;
 
                         Message.prompt('Battle beginning...');
+                        
                         player.setup();
                         enemy.setup();
                     }

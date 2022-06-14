@@ -30,6 +30,10 @@ class Main extends Sprite {
 
 		client = new Client(this);
 
+		// TODO: remove this test code later
+		var testCard:Card = new Card(this, 1);
+		testCard.setup();
+
 		stage.addEventListener(Event.RESIZE, onResize);
 		onResize();
 	}
@@ -81,10 +85,18 @@ class Main extends Sprite {
 
 	// Converts hex number to usable ColorTransform
 	public function getHexColor(hex:Int):ColorTransform {
-		var color: ColorTransform = new ColorTransform();
+		var color:ColorTransform = new ColorTransform();
 		color.color = hex;
 
         return color;
+	}
+
+	// Converts dynamic color to usable ColorTransform
+	public function getDynamicColor(c:Dynamic) {
+		var color:ColorTransform = new ColorTransform();
+		color = new ColorTransform(c.ra / 100, c.ga / 100, c.ba / 100, c.aa / 100, c.rb, c.gb, c.bb, c.ab);
+		
+		return color;
 	}
 
 	// Code taken from online

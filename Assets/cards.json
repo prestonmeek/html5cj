@@ -1,0 +1,9 @@
+[
+    {
+        "id": 1,
+        "power": 3,
+        "glow": true,
+        "element": "water",
+        "color": "purple"
+    }
+]

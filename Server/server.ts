@@ -37,7 +37,7 @@ class Server extends WebSocketServer {
             // Tell the client that tey have to wait for another player to start a match
             this.sendPacket(ws, 'wait')
             
-            // If the queue length is 2, we can tell the clients to begin their match
+            // If the queue length is 2, we can have the clients query for each other's name
             if (this.queue.length == 2)
                 this.broadcastToQueue('get enemy username')
 

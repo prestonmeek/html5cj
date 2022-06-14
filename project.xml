@@ -12,9 +12,12 @@
 	
 	<assets path="Assets" rename="assets" />
 	<assets path="Assets/colors.json" rename="colors" />
+	<assets path="Assets/cards.json" rename="cards" />
 	
 	<library path="Assets/card.swf" id="card" preload="true" />
 	<library path="Assets/ambient.swf" preload="true" />
 	<library path="Assets/walk.swf" preload="true" />
+
+	<library path="Assets/Icons/1.swf" preload="true" />
 	
 </project>
