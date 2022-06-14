@@ -8,8 +8,6 @@ import openfl.display.MovieClip;
 
 import openfl.text.TextField;
 
-import openfl.geom.ColorTransform;
-
 class Card {
     private var game:Main;
 
@@ -35,7 +33,7 @@ class Card {
 
     private var icon:MovieClip;
 
-    public function new(game:Main, id:Int) {
+    public function new(game:Main, index:Int) {
         this.game = game;
 
         // Load the colors JSON file
@@ -45,15 +43,16 @@ class Card {
         // Load the cards JSON file
         cards = Json.parse(Assets.getText('cards'));
 
-        // Get the specific card's data from the JSON data based on its ID
-        // We subtact 1 since an ID of 1 equals an index of 0, and so on
-        data = cards[id - 1];
+        // Get the specific card's data from the JSON data based on its index
+        data = cards[index];
 
         // Overwrite the data object's color property and add a glow property
         // This converts the stored color string into a usable ColorTransform
-        // This also adds a glow property as a ColorTransform as well
+        // This also adds a glow property as a ColorTransform as well, if the card is supposed to have one
         // The glow property must be added first since it uses the original color property to get its data
-        data.glow  = game.getDynamicColor(colors[data.color].glow);
+        if (data.glow)
+            data.glow = game.getDynamicColor(colors[data.color].glow);
+        
         data.color = game.getHexColor(Std.parseInt(colors[data.color].hex));
 
         // Load the relevant components of the card MovieClip
@@ -68,9 +67,19 @@ class Card {
     }
 
     // Setup the visual aspects of the card MovieClip
-    public function setup():Void {
+    public function setup(offset:Int):Void {
         // This is the default frame in which a card will be stopped on
+        // This is the back side of a card
         body.gotoAndStop(1);
+
+        // Set the card's x and y position
+        // The offset is multiplied by 72 since that is the width of the card
+        body.x = 50 + (offset * 72);
+        body.y = 385;
+
+        // Scale the card down
+        body.scaleX = .275;
+        body.scaleY = .275;
 
         // If the card has a glow, keep it visible and set its correct color
         // Otherwise, simply hide the glow MovieClip

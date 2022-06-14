@@ -28,11 +28,12 @@ class Main extends Sprite {
 		// NOTE: Message.init() should come before anything else in this file (setupDisplay must come before it, though)
 		Message.init(this);
 
-		client = new Client(this);
+		for (i in 0...5) {
+			var card:Card = new Card(this, Random.int(0, 1));
+			card.setup(i);
+		}
 
-		// TODO: remove this test code later
-		var testCard:Card = new Card(this, 1);
-		testCard.setup();
+		client = new Client(this);
 
 		stage.addEventListener(Event.RESIZE, onResize);
 		onResize();
@@ -95,7 +96,7 @@ class Main extends Sprite {
 	public function getDynamicColor(c:Dynamic) {
 		var color:ColorTransform = new ColorTransform();
 		color = new ColorTransform(c.ra / 100, c.ga / 100, c.ba / 100, c.aa / 100, c.rb, c.gb, c.bb, c.ab);
-		
+
 		return color;
 	}
 

@@ -3,7 +3,14 @@
         "id": 1,
         "power": 3,
         "glow": true,
-        "element": "water",
+        "element": "fire",
         "color": "purple"
+    },
+    {
+        "id": 1,
+        "power": 10,
+        "glow": false,
+        "element": "snow",
+        "color": "green"
     }
 ]

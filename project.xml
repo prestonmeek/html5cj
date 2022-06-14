@@ -9,6 +9,7 @@
 	<source path="Source" />
 	
 	<haxelib name="openfl" />
+	<haxelib name="random" />
 	
 	<assets path="Assets" rename="assets" />
 	<assets path="Assets/colors.json" rename="colors" />
