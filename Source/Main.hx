@@ -93,7 +93,7 @@ class Main extends Sprite {
 	}
 
 	// Converts dynamic color to usable ColorTransform
-	public function getDynamicColor(c:Dynamic) {
+	public function getDynamicColor(c:Dynamic):ColorTransform {
 		var color:ColorTransform = new ColorTransform();
 		color = new ColorTransform(c.ra / 100, c.ga / 100, c.ba / 100, c.aa / 100, c.rb, c.gb, c.bb, c.ab);
 

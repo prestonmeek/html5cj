@@ -1,5 +1,6 @@
 package;
 
+import haxe.DynamicAccess;
 import haxe.Json;
 
 import openfl.Assets;
@@ -18,7 +19,7 @@ class Card {
         'snow'  => 3
     ];
 
-    private var colors:Dynamic;
+    private var colors:DynamicAccess<Dynamic>;
     private var cards:Dynamic;
 
     private var data:Dynamic;
@@ -44,14 +45,19 @@ class Card {
         cards = Json.parse(Assets.getText('cards'));
 
         // Get the specific card's data from the JSON data based on its index
+        // Since this is an array, we don't need to use .get()
         data = cards[index];
 
         // Overwrite the data object's color property and add a glow property
         // This converts the stored color string into a usable ColorTransform
         // This also adds a glow property as a ColorTransform as well, if the card is supposed to have one
         // The glow property must be added first since it uses the original color property to get its data
-        if (data.glow)
-            data.glow = game.getDynamicColor(colors[data.color].glow);
+        if (data.glow) {
+            // We need to use .get() here in order to keep this application cross-platform
+            // Something like colors[data.color] works in the web, but not for macos building
+            // Assumably, this is because the web handles Dynamics like JS objects, but they are handled differently in C++
+            data.glow = game.getDynamicColor(colors.get(data.color).glow);
+        }
         
         data.color = game.getHexColor(Std.parseInt(colors[data.color].hex));
 
@@ -83,10 +89,13 @@ class Card {
 
         // If the card has a glow, keep it visible and set its correct color
         // Otherwise, simply hide the glow MovieClip
-        if (data.glow)
+        // We explicitly do != false for cross-compile support
+        if (data.glow != false)
             glow.transform.colorTransform = data.glow;
         else
             glow.visible = false;
+
+        trace(data);
 
         // Set the elem MovieClip frame equal to the frame of the stored element
         // The frame of the element is accessed using the elements Map, which converts the element string to the frame integer
