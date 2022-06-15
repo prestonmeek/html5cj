@@ -3,6 +3,7 @@ package;
 import haxe.DynamicAccess;
 import haxe.Json;
 
+import openfl.Lib;
 import openfl.Assets;
 
 import openfl.display.MovieClip;
@@ -78,10 +79,11 @@ class Card {
         // This is the back side of a card
         body.gotoAndStop(1);
 
-        // Set the card's x and y position
-        // The offset is multiplied by 72 since that is the width of the card
-        body.x = 50 + (offset * 72);
-        body.y = 385;
+        // Set the card's initial x and y position
+        // It will be positioned at the bottom center of the screen
+        // We use the "power" child to center instead of "body" because for some reason its width value is a lot larger than it appears
+        body.x = (game.getScreenWidth() - power.width) / 2;
+        body.y = (game.getScreenHeight() - power.height) / 2;
 
         // Scale the card down
         body.scaleX = .275;
@@ -118,5 +120,12 @@ class Card {
 
         // Add the card to the game
         game.addChild(body);
+    }
+
+    public function show():Void {
+        // Set the card's x and y position
+        // The offset is multiplied by 72 since that is the width of the card
+        body.x = 50 + (1 * 72);
+        body.y = 385;
     }
 }

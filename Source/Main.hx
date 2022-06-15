@@ -100,6 +100,14 @@ class Main extends Sprite {
 		return color;
 	}
 
+	public function getScreenWidth():Int {
+		return NOMINAL_WIDTH;
+	}
+
+	public function getScreenHeight():Int {
+		return NOMINAL_HEIGHT;
+	}
+
 	// Code taken from online
 	// Just resizes the stage as the window changes size
 	private function onResize(?e:Event):Void {
