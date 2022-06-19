@@ -25,6 +25,8 @@ class Penguin {
     private var game:Main;
     private var type:PenguinType;
 
+    private var deck:Deck;
+
     private var username:String;
 
     private var colors:Dynamic;
@@ -40,6 +42,8 @@ class Penguin {
     public function new(game:Main, type:PenguinType) {
         this.game = game;
         this.type = type;
+
+        deck = new Deck(game, type);
 
         // Load the colors JSON file
         colors = Json.parse(Assets.getText('colors'));
@@ -65,6 +69,10 @@ class Penguin {
             // Remove the penguin MovieClip and re-add it as the idle animation
             game.removeChild(penguin);
             setupPenguin(Assets.getMovieClip('ambient:ambient'));
+
+            // Setup the deck and show the cards
+            deck.setup();
+		    deck.show();
         });
 
         // Set the player's username text so it is shown on the screen

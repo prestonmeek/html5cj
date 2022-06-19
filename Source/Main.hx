@@ -28,11 +28,6 @@ class Main extends Sprite {
 		// NOTE: Message.init() should come before anything else in this file (setupDisplay must come before it, though)
 		Message.init(this);
 
-		for (i in 0...5) {
-			var card:Card = new Card(this, Random.int(0, 1));
-			card.setup(i);
-		}
-
 		client = new Client(this);
 
 		stage.addEventListener(Event.RESIZE, onResize);

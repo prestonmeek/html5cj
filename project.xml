@@ -10,7 +10,8 @@
 	
 	<haxelib name="openfl" />
 	<haxelib name="random" />
-	
+	<haxelib name="actuate" />
+
 	<assets path="Assets" rename="assets" />
 	<assets path="Assets/colors.json" rename="colors" />
 	<assets path="Assets/cards.json" rename="cards" />
