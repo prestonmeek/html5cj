@@ -23,8 +23,8 @@ class Client {
 
         ws = new WebSocket('ws://localhost:' + Std.string(port));
 
-        player  = new Penguin(game, Player);
-        enemy   = new Penguin(game, Enemy);
+        player = new Penguin(game, Player);
+        enemy  = new Penguin(game, Enemy);
 
         handleEvents();
     }

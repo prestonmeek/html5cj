@@ -5,6 +5,7 @@ import openfl.Assets;
 
 import openfl.display.Sprite;
 import openfl.display.MovieClip;
+import openfl.display.DisplayObject;
 
 import openfl.events.Event;
 import openfl.events.MouseEvent;
@@ -28,7 +29,12 @@ class Main extends Sprite {
 		// NOTE: Message.init() should come before anything else in this file (setupDisplay must come before it, though)
 		Message.init(this);
 
-		client = new Client(this);
+		// client = new Client(this);
+		// TODO: remove this later, this is just for testing
+		var player = new Penguin(this, Player);
+        var enemy  = new Penguin(this, Enemy);
+		player.setup();
+        enemy.setup();
 
 		stage.addEventListener(Event.RESIZE, onResize);
 		onResize();
@@ -55,11 +61,11 @@ class Main extends Sprite {
 		var background:MovieClip = getChild('background_mc');
 
 		// We add the background MovieClip to just Sprite instead of Sprite.game_mc
-		// This way, we can actually move it to the very back
+		// This way, it will be in the very back
 		// The game UI (clock, help menu, etc.) aka game_mc can now be in front of the player with the background being behind them
+		// The child game_mc is added at the bottom of this function
 		game_mc.removeChild(background);
 		addChild(background);
-		swapChildren(background, game_mc);
 
 		var help_mc = getChild('mc_help');
 
@@ -77,6 +83,12 @@ class Main extends Sprite {
 		help_mc.addEventListener(MouseEvent.CLICK, (event:MouseEvent) -> help_mc.play());
 
 		addChild(game_mc);
+	}
+
+	// Adds children behind the game UI
+	// This ensures that the help panel is always in front of these children (namely the penguins)
+	public function addChildBehindUI(child:DisplayObject):Void {
+		addChildAt(child, getChildIndex(game_mc));
 	}
 
 	// Converts hex number to usable ColorTransform

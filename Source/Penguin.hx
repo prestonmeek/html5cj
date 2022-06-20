@@ -76,7 +76,8 @@ class Penguin {
         });
 
         // Set the player's username text so it is shown on the screen
-        nameField.text = username;
+        if (username != null)
+            nameField.text = username;
     }
 
     // Set the username text
@@ -112,8 +113,7 @@ class Penguin {
         setBeltColor('black');
 
         // Add the main penguin body to the game
-        // The - 3 is kind of arbitrary, but it just ensures the penguin sprite is behind the game UI (like the help menu)
-        game.addChildAt(penguin, game.numChildren - 3);
+        game.addChildBehindUI(penguin);
     }
 
     // Sets the penguin color
