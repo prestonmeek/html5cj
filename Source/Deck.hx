@@ -25,25 +25,33 @@ class Deck {
             card.setup();
     }
 
-    // Show all the cards
-    // We do this using a timer so each card is on a slight delay
-    // TODO: add enemy functionality
+    // Show all the cards on the screen for the first time
     public function show():Void {
-        var timer:Timer = new Timer(100);
+        // We do this for the Player using a timer so each card is on a slight delay
+        if (type == Player) {
+            var timer:Timer = new Timer(100);
 
-        var i:Int = 0;
+            var i:Int = 0;
 
-        timer.run = () -> {
-            // Show the current card
-            // We pass in the index so that it knows where to be positioned on the screen
-            cards[i].show(i);
+            timer.run = () -> {
+                // Show the current card
+                // We pass in the index so that it knows where to be positioned on the screen
+                cards[i].show(i);
 
-            // If we have gone through all the cards, break (this is when i is exactly one less than the "cards" array length)
-            // Otherwise, increment i
-            if (i == cards.length - 1)
-                timer.stop();
-            else
-                i++;
+                // If we have gone through all the cards, break (this is when i is exactly one less than the "cards" array length)
+                // We also want to start the clock countdown once all the cards have been shown
+                // Otherwise, increment i
+                if (i == cards.length - 1) {
+                    timer.stop();
+                    game.startClock();
+                } 
+                else
+                    i++;
+            }
+        // For the enemy, there is no delay; all the cards appear at once
+        }  else {
+            for (i in 0...cards.length)
+                cards[i].show(i);
         }
     }
 }

@@ -12,10 +12,14 @@ import openfl.events.MouseEvent;
 
 import openfl.geom.ColorTransform;
 
+// TODO: fix fonts
+
 class Main extends Sprite {
 	private var game_mc:MovieClip;
 
 	private var client:Client;
+
+	private var clock:Clock;
 
 	// These are taken directly from project.xml
 	public static inline var NOMINAL_WIDTH:Int  = 760;
@@ -36,6 +40,8 @@ class Main extends Sprite {
 		player.setup();
         enemy.setup();
 
+		clock = new Clock(this);
+
 		stage.addEventListener(Event.RESIZE, onResize);
 		onResize();
 	}
@@ -53,17 +59,12 @@ class Main extends Sprite {
 	private function setupDisplay():Void {
 		game_mc = Assets.getMovieClip('card:');
 
-		// Hide the clock and loading children
-		// We use cast to change these from Dynamics to MovieClips so the visible property works
-		cast(getChild('mc_clock'), MovieClip).visible   = false;
-		cast(getChild('loading_mc'), MovieClip).visible = false;
-
-		var background:MovieClip = getChild('background_mc');
-
 		// We add the background MovieClip to just Sprite instead of Sprite.game_mc
 		// This way, it will be in the very back
 		// The game UI (clock, help menu, etc.) aka game_mc can now be in front of the player with the background being behind them
 		// The child game_mc is added at the bottom of this function
+		var background:MovieClip = getChild('background_mc');
+
 		game_mc.removeChild(background);
 		addChild(background);
 
@@ -89,6 +90,11 @@ class Main extends Sprite {
 	// This ensures that the help panel is always in front of these children (namely the penguins)
 	public function addChildBehindUI(child:DisplayObject):Void {
 		addChildAt(child, getChildIndex(game_mc));
+	}
+
+	// Start the clock
+	public function startClock():Void {
+		clock.start();
 	}
 
 	// Converts hex number to usable ColorTransform

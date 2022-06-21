@@ -11,6 +11,8 @@ import openfl.display.DisplayObject;
 
 import openfl.text.TextField;
 
+import openfl.events.MouseEvent;
+
 import motion.Actuate;
 
 import Penguin.PenguinType;
@@ -100,6 +102,12 @@ class Card {
         body.x = (game.getScreenWidth() - width) / 2;
         body.y = game.getScreenHeight();
 
+        // Get the icon MovieClip based on the ID of the card as stored in the JSON file
+        // Add the icon as a child to the MovieClip
+        // The icon will be moved behind everything else in the setOrientation method
+        icon = Assets.getMovieClip(Std.string(data.id) + ':');
+        body.addChild(icon);
+
         // This if-statement lets us change the setup for the player's cards and the enemy's cards
         // The player's cards start as face-forward, while the enemy cards are the opposite
         // The enemy cards are also a bit smaller
@@ -107,46 +115,15 @@ class Card {
             // Set the card to be facing forward
             setOrientation(Front);
 
-            // If the card has a glow, keep it visible and set its correct color
-            // Otherwise, simply hide the glow MovieClip
-            // We explicitly do != false for cross-compile support
-            if (data.glow != false)
-                glow.transform.colorTransform = data.glow;
-            else
-                glow.visible = false;
+            // When the card is rolled over, set it to frame 2
+            // This gives it a slight shadow tint
+            body.addEventListener(MouseEvent.ROLL_OVER, (event:MouseEvent) -> setOrientation(Front, 2));
 
-            // Set the elem MovieClip frame equal to the frame of the stored element
-            // The frame of the element is accessed using the elements Map, which converts the element string to the frame integer
-            elem.gotoAndStop(elements[data.element]);
-
-            // Set the card color based on the JSON data
-            color.transform.colorTransform = data.color;
-
-            // Set the power of the card equal to the power stored in the JSON
-            power.text = Std.string(data.power);
-
-            // Get the icon MovieClip based on the ID of the card as stored in the JSON file
-            // Add the icon as a child to the MovieClip behind everything else within the MovieClip (aka index 0)
-            icon = Assets.getMovieClip(Std.string(data.id) + ':');
-            body.addChildAt(icon, 0);
-
-            // Move the glow behind everything, including the icon
-            // This is why we do this step after moving the icon to the back
-            body.setChildIndex(glow, 0);
-
-            // Set the custom width and height attributes for the front-facing card
-            // The reasoning is explained above the width and height declarations
-            width  = power.width;
-            height = power.height;
+            // When the card is rolled out of, set it back to the default frame 1
+            body.addEventListener(MouseEvent.ROLL_OUT, (event:MouseEvent) -> setOrientation(Front));
         } else {
             // Set the card to be facing backwards
             setOrientation(Back);
-
-            // We will never see the glow, element, or power of an enemy's cards
-            // Therefore, we can just hide them all
-            glow.visible  = false;
-            elem.visible  = false;
-            power.visible = false;
         }
 
         // Add the card to the game
@@ -154,9 +131,18 @@ class Card {
     }
 
     // Set the orientation of the card
-    private function setOrientation(orientation:CardOrientation):Void {
-        // This is the default frame in which a card will be stopped on
-        var frame:Int;
+    private function setOrientation(orientation:CardOrientation, ?frame:Int):Void {
+        // Frame 1 is the default front-facing frame
+        // Frame 5 is the default back-facing frame
+        if (frame == null) {
+            if (orientation == Front)
+                frame = 1;
+            else
+                frame = 5;
+        }
+
+        // Set the frame of the card
+        body.gotoAndStop(frame);
 
         // The new scaleX and scaleY of the card (to scale it down)
         var scale:Float;
@@ -167,25 +153,63 @@ class Card {
         // DisplayObject is used since dimensionsParent can be either TextField or MovieClip
         var dimensionsParent:DisplayObject;
 
+         // If the card is facing forward, set its color, icon, element, and power
+        // Otherwise, hide them (since the back side doesn't show an element or power)
         if (orientation == Front) {
-            // These numbers come from the original CJ code
-            frame = 1;
+            // This number come from the original CJ code
             scale = .275;
 
             // Front-facing cards use the "power" child to get their width and height
             dimensionsParent = power;
+
+            // We will always see the icon, element, and power (and sometimes glow) of a front-facing card
+            // Make sure all of these are visible
+            // If the card doesn't have a glow, it is set to be invisible below
+            icon.visible  = true;
+            elem.visible  = true;
+            glow.visible  = true;
+            power.visible = true;
+
+            // Set the card color based on the JSON data
+            color.transform.colorTransform = data.color;
+            
+            // Move the icon behind everything else (aka index 0)
+            body.setChildIndex(icon, 0);
+
+            // If the card has a glow, keep it visible and set its correct color
+            // Otherwise, simply hide the glow MovieClip
+            // We explicitly do != false for cross-compile support
+            if (data.glow != false)
+                glow.transform.colorTransform = data.glow;
+            else
+                glow.visible = false;
+
+            // Move the glow behind everything, including the icon
+            // This is why we do this step after moving the icon to the back
+            body.setChildIndex(glow, 0);
+
+            // Set the elem MovieClip frame equal to the frame of the stored element
+            // The frame of the element is accessed using the elements Map, which converts the element string to the frame integer
+            elem.gotoAndStop(elements[data.element]);
+
+            // Set the power of the card equal to the power stored in the JSON
+            power.text = Std.string(data.power);
         } else {
-            // These numbers come from the original CJ code
-            frame = 5;
+            // This number come from the original CJ code
             scale = .15;
 
             // Back-facing cards use the "body" child to get their width and height
             dimensionsParent = body;
+
+            // We will never see the icon, element, glow, or power of a back-facing card
+            // Therefore, we can just hide them
+            icon.visible  = false;
+            elem.visible  = false;
+            glow.visible  = false;
+            power.visible = false;
         }
 
-        // Set the frame, scaleX, scaleY, width, and height of the card
-        body.gotoAndStop(frame);
-
+        // Set the scaleX, scaleY, width, and height of the card
         body.scaleX = scale;
         body.scaleY = scale;
 
@@ -193,27 +217,29 @@ class Card {
         height = dimensionsParent.height;
     }
 
-    // Show the card on the screen
+    // Show the cards on the screen for the first time
     public function show(offset:Int):Void {
-        // Since it is only the initial y that changes, we don't need an initial y variable
+        // The initial x-value for the Player and Enemy change
         var initialX:Int;
+
+        // The same y-value is used for both the Player's and the Enemy's cards, so we can define it here
+        var y:Int = 385;
 
         // This if-statement lets us change the display locations for the player's cards and enemy's cards
         // For simplicity's sake, the player will always be on the left and the enemy on the right
-        // These values were obtained from the original CJ code and/or experimentally
+        // These seemingly random values for x and y were obtained from the original CJ code and/or experimentally
         if (type == Player)
             initialX = 50;
         else
             initialX = 530;
 
-        // Set the card's x and y position
-        // The initial X is added to the offset multiplied by the width
+        // Set the card's x and y position with an animation
+        // The initial x-value of 50 is added to the offset multiplied by the width
         // This properly spaces the cards out
-        // TODO: make only the player's cards tween; enemy cards should appear all at once.
         Actuate.tween(body, .5, 
             {
                 x: initialX + (offset * width),
-                y: 385
+                y: y
             }
         );
     }
