@@ -28,10 +28,11 @@ class Clock {
     // Reset the clock
     private function reset(visible:Bool):Void {
         // Set the body's default frame and hide it
+        // Frame 1 is a fully green clock
         body.gotoAndStop(1);
         body.visible = visible;
 
-        // The clock always starts with 20 seconds
+        // The clock starts with 20 seconds by default
         currentTime = 20;
 
         // Set the default display text to be the default currentTime value (20 seconds)
@@ -60,5 +61,9 @@ class Clock {
             if (currentTime == 1)
                 timer.stop();
         }
+    }
+
+    public function stop():Void {
+        timer.stop();
     }
 }

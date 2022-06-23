@@ -12,7 +12,10 @@ import openfl.events.MouseEvent;
 
 import openfl.geom.ColorTransform;
 
-// TODO: fix fonts
+import openfl.ui.Mouse;
+import openfl.ui.MouseCursor;
+
+// TODO: embed and fix fonts
 
 class Main extends Sprite {
 	private var game_mc:MovieClip;
@@ -33,12 +36,7 @@ class Main extends Sprite {
 		// NOTE: Message.init() should come before anything else in this file (setupDisplay must come before it, though)
 		Message.init(this);
 
-		// client = new Client(this);
-		// TODO: remove this later, this is just for testing
-		var player = new Penguin(this, Player);
-        var enemy  = new Penguin(this, Enemy);
-		player.setup();
-        enemy.setup();
+		client = new Client(this);
 
 		clock = new Clock(this);
 
@@ -81,8 +79,15 @@ class Main extends Sprite {
 		help_mc.addFrameScript(stop_frame, () -> help_mc.stop());
 		help_mc.addFrameScript(skip_frame, () -> help_mc.gotoAndStop(skipTo_frame));
 
+		// When the help menu is rolled over, it looks clickable
+		// When it is rolled off of, the cursor is set back to the arrow
+		help_mc.addEventListener(MouseEvent.ROLL_OVER, (event:MouseEvent) -> Mouse.cursor = MouseCursor.BUTTON);
+		help_mc.addEventListener(MouseEvent.ROLL_OUT,  (event:MouseEvent) -> Mouse.cursor = MouseCursor.ARROW);
+
+		// When the help menu is clicked, it opens
 		help_mc.addEventListener(MouseEvent.CLICK, (event:MouseEvent) -> help_mc.play());
 
+		// Add the game UI to this class
 		addChild(game_mc);
 	}
 
@@ -95,6 +100,11 @@ class Main extends Sprite {
 	// Start the clock
 	public function startClock():Void {
 		clock.start();
+	}
+
+	// Stop the clock
+	public function stopClock():Void {
+		clock.stop();
 	}
 
 	// Converts hex number to usable ColorTransform
@@ -121,7 +131,7 @@ class Main extends Sprite {
 		return NOMINAL_HEIGHT;
 	}
 
-	// Code taken from online
+	// Code taken from OpenFL forums
 	// Just resizes the stage as the window changes size
 	private function onResize(?e:Event):Void {
 		var stageScaleX:Float = stage.stageWidth  / NOMINAL_WIDTH;

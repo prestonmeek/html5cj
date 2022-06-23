@@ -10,7 +10,8 @@ interface Packet {
 
 // Extend the WebSocket type with any optional parameters we may need
 interface Client extends WebSocket {
-    ready: boolean
+    ready: boolean,
+    deck: Array<Number>
 }
 
 class Server extends WebSocketServer {
@@ -39,7 +40,7 @@ class Server extends WebSocketServer {
             
             // If the queue length is 2, we can have the clients query for each other's name
             if (this.queue.length == 2)
-                this.broadcastToQueue('get enemy username')
+                this.broadcastToQueue('get client info')
 
             ws.on('message', (packet: string) => this.handlePacket(ws, packet))
 
@@ -79,21 +80,28 @@ class Server extends WebSocketServer {
         let data: Packet = JSON.parse(packet)
 
         // If the packet doesn't have a 'type', just return
-        if (!('type' in data))
+        // Also, if the queue length is not 2, return
+        if (!('type' in data) || this.queue.length != 2)
             return
 
         switch (data['type']) {
             // A queue will always have exactly 2 clients when full
             // We have to retrieve the second client's name from the first client, and vice versa
             // This receives a client's name, stores it, and then sends the name to the other/second client
-            case 'send enemy username':
+            // We also receive other information like the deck
+            case 'send client info':
                 // Get the index of the queue in which we send the packet to
                 // If the current client is at index 0, send it to the one at index 1, and vice versa
-                let sendingIndex: number = this.queue.indexOf(ws) == 0 ? 1 : 0
+                // We could just do 1 - indexOf(ws), but I think this alernative is a bit more readable
+                // We then get the Client object of this "other client"
+                let otherClient: Client = this.queue.indexOf(ws) == 0 ? this.queue[1] : this.queue[0]
 
-                // TODO: change the random usernames to be data['name']
-                // We use the random names here just for clear testing (since login doesn't exist yet)
-                this.sendPacket(this.queue[sendingIndex], 'set enemy username', { 'name': sendingIndex == 0 ? 'Jackie' : 'Tent' })
+                // We send the other client the necessary information of the first client
+                // TODO: change the random username to be data['name']
+                this.sendPacket(otherClient, 'set client info', { 
+                    'name': 'Jackie',
+                    'deck': data['deck']
+                })
 
                 break
 

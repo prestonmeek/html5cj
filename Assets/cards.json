@@ -12,5 +12,26 @@
         "glow": false,
         "element": "snow",
         "color": "green"
+    },
+    {
+        "id": 1,
+        "power": 3,
+        "glow": true,
+        "element": "fire",
+        "color": "blue"
+    },
+    {
+        "id": 1,
+        "power": 10,
+        "glow": false,
+        "element": "water",
+        "color": "red"
+    },
+    {
+        "id": 1,
+        "power": 10,
+        "glow": false,
+        "element": "snow",
+        "color": "yellow"
     }
 ]

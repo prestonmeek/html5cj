@@ -2,6 +2,8 @@ package;
 
 import haxe.Timer;
 
+import openfl.events.MouseEvent;
+
 import Penguin.PenguinType;
 
 class Deck {
@@ -13,16 +15,54 @@ class Deck {
     public function new(game:Main, type:PenguinType) {
         this.game = game;
         this.type = type;
+    }
 
-        // Creates an array with 5 different cards with a random index using array comprehension
-        this.cards = [for (i in 0...5) new Card(game, type, Random.int(0, 1))];
+    // We generate the cards array based on the indecies in the passed-in array
+    // We use these indecies to read data from the JSON file
+    public function generateCards(cardIndecies:Array<Int>):Void {
+        // The cardIndecies array must be exactly 5 (a deck will always have 5 cards)
+        if (cardIndecies.length != 5)
+            return;
+
+        // Generates the cards array using array comprehension
+        // This uses the indecies provided in the cardIndecies array, which is then passed to the Card cl
+        this.cards = [for (i in 0...5) new Card(game, type, cardIndecies[i])];
     }
 
     // Setup all the cards to be displayed
-    // TODO: add enemy functionality
     public function setup():Void {
-        for (card in cards)
+        // The card array length must be exactly 5
+        if (cards.length != 5)
+            return;
+
+        // We iterate this way instead of for (card in cards) because the index is important
+        for (i in 0...5) {
+            var card:Card = cards[i];
+            
             card.setup();
+
+            // For the player, we also want to add another MouseEvent listener
+            // (the main MouseEvent listeners are added in the Card class directly)
+            // This one removes all the mouse events for every card in the deck
+            // This is so once a card is clicked, none of the other cards can be clicked or even hovered over
+            // This is why the MouseEvents are handled in the Deck class
+            // In this click event, we also tell the server that we have selected a card
+            if (type == Player) {
+                card.addEventListener(MouseEvent.CLICK, (event:MouseEvent) -> {
+                    // We check if the Card body has the ROLL_OVER event listener
+                    // This is because after the card is clicked, it will no longer have this listener
+                    // Therefore, if the card DOES have it, then it means this is the first time it has been clicked
+                    // Thus, we can safely tell the server a card has been selected
+                    if (card.hasEventListener(MouseEvent.ROLL_OVER)) {
+                        // We pass in the index inside the deck so the server knows what card has been selected
+                        Client.sendPacket('selected card', { 'indexInDeck': i } );
+                    }
+
+                    for (card in cards)
+                        card.removeEventListeners();
+                });
+            }
+        }
     }
 
     // Show all the cards on the screen for the first time

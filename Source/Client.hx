@@ -11,7 +11,7 @@ class Client {
     private var game:Main;
 
     private var port:Int = 8080;
-    private var ws:WebSocket;
+    private static var ws:WebSocket;
 
     private var setup:Bool = false;
 
@@ -30,11 +30,15 @@ class Client {
     }
 
     private function handleEvents():Void {
-        // TODO: get this from the login information
+        // TODO: instead of these sample values, get this info from the database
         var username:String = 'Preston';
+        var deck:Array<Int> = [0, 1, 2, 3, 4];
 
+        // When the client connects, send the server any important information
         ws.onopen = () -> {
             trace('Connected to server');
+
+            sendPacket('store client data', { 'username': username, 'deck': deck });
         }
 
         ws.onmessage = (msg: MessageEvent) -> {
@@ -42,19 +46,25 @@ class Client {
 
             switch (data.type) {
                 // Wait for another client to join the queue
-                // We set the username here since we have confirmed that we are connected to the server
+                // We set the username and deck here since we have confirmed that we are connected to the server
                 case 'wait':
                     player.setUsername(username);
+                    player.setDeck(deck);
+
                     Message.prompt('Please wait for another client...', true);
 
-                // We need to get the enemy's username
-                // This packet is so the OTHER client gets OUR username (the client is the enemy in this case)
-                case 'get enemy username':
-                    sendPacket('send enemy username', { 'name': username });
-
-                // Set the enemy username to the one received
-                case 'set enemy username':
+                // We need to get the enemy's information
+                // This packet is so the OTHER client gets OUR information (the client is the enemy in this case)
+                // TODO: make it so we get the deck from the database
+                case 'get client info':
+                    sendPacket('send client info', { 'name': username, 'deck': [0, 1, 2, 3, 4] });
+                
+                // Now that we have the other client's info, we can set it accordingly
+                case 'set client info':
                     enemy.setUsername(data.name);
+                    enemy.setDeck(data.deck);
+
+                    // Since we have received all the information we need, we can tell the server we are ready
                     sendPacket('ready');
 
                 // Both clients are ready, so we can begin the match
@@ -76,7 +86,8 @@ class Client {
         }
     }
 
-    private function sendPacket(type:String, ?args:Dynamic):Void {
+    // This function is static and public so that other classes can easily use it without weird passing of class instances
+    public static function sendPacket(type:String, ?args:Dynamic):Void {
         // Join the type of the packet with its arguments
         ws.send(
             Json.stringify(

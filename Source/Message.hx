@@ -9,6 +9,9 @@ import openfl.text.TextField;
 
 import openfl.events.MouseEvent;
 
+import openfl.ui.Mouse;
+import openfl.ui.MouseCursor;
+
 class Message {
     private static var box:MovieClip;
     private static var txt:TextField;
@@ -28,7 +31,12 @@ class Message {
         txt = game.getChild('message_txt', box);
 
         btn = game.getChild('dialogue_btn', box);
-        btn.addEventListener(MouseEvent.CLICK, (event:MouseEvent) -> box.visible = false);
+
+        // When the Ok button is clicked, hide the dialogue box and set the mouse cursor back to the normal arrow
+        btn.addEventListener(MouseEvent.CLICK, (event:MouseEvent) -> {
+            box.visible = false;
+            Mouse.cursor = MouseCursor.ARROW;
+        });
 
         load = game.getChild('loading_mc');
 

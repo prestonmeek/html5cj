@@ -12,6 +12,10 @@ import openfl.display.DisplayObject;
 import openfl.text.TextField;
 
 import openfl.events.MouseEvent;
+import openfl.events.EventType;
+
+import openfl.ui.Mouse;
+import openfl.ui.MouseCursor;
 
 import motion.Actuate;
 
@@ -115,12 +119,8 @@ class Card {
             // Set the card to be facing forward
             setOrientation(Front);
 
-            // When the card is rolled over, set it to frame 2
-            // This gives it a slight shadow tint
-            body.addEventListener(MouseEvent.ROLL_OVER, (event:MouseEvent) -> setOrientation(Front, 2));
-
-            // When the card is rolled out of, set it back to the default frame 1
-            body.addEventListener(MouseEvent.ROLL_OUT, (event:MouseEvent) -> setOrientation(Front));
+            // Add all the important event listeners
+            addEventListeners();
         } else {
             // Set the card to be facing backwards
             setOrientation(Back);
@@ -128,6 +128,86 @@ class Card {
 
         // Add the card to the game
         game.addChild(body);
+    }
+
+    // Adds the event listener to the body
+    // This is so the Deck class can add event listeners
+    public function addEventListener(type:EventType<MouseEvent>, listener: (event:MouseEvent) -> Void):Void {
+        body.addEventListener(type, listener);
+    }
+
+    // This adds all the important event listeners
+    // This is NOT for the Deck class, this is just for better code (hence this is private)
+    private function addEventListeners():Void {
+        body.addEventListener(MouseEvent.ROLL_OVER, onRollOver);
+        body.addEventListener(MouseEvent.ROLL_OUT, onRollOut);
+        body.addEventListener(MouseEvent.CLICK, onClick);
+    }
+
+    // Checks if the Card body has an event listener
+    // This is so the Deck class can check for event listeners
+    public function hasEventListener(type:String):Bool {
+        return body.hasEventListener(type);
+    }
+
+    // Removes all the event listeners from the Card body
+    // This is so the Deck class can remove event listeners
+    public function removeEventListeners():Void {
+        body.removeEventListener(MouseEvent.ROLL_OVER, onRollOver);
+        body.removeEventListener(MouseEvent.ROLL_OUT, onRollOut);
+        body.removeEventListener(MouseEvent.CLICK, onClick);
+    }
+
+    // When the card is rolled over, set it to frame 2
+    // This gives it a slight shadow tint
+    // Also, change the mouse cursor so the card looks clickable
+    public function onRollOver(event:MouseEvent):Void {
+        setOrientation(Front, 2);
+        Mouse.cursor = MouseCursor.BUTTON;
+    }
+
+    // When the card is rolled out of, set it back to the default frame 1
+    // Also, change the mouse cursor so that it is back to being the default arrow
+    public function onRollOut(event:MouseEvent):Void {
+        setOrientation(Front);
+        Mouse.cursor = MouseCursor.ARROW;
+    }
+
+    // When the card is clicked, stop the clock and send the card to the center
+    public function onClick(event:MouseEvent):Void {
+        // Stop the game clock
+        game.stopClock();
+
+        // Reset the cursor to the default arrow
+        Mouse.cursor = MouseCursor.ARROW;
+
+        // Make sure the card is on frame 1
+        setOrientation(Front);
+
+        // The x-value for the Player and Enemy cards
+        var x:Int;
+
+        // This if-statement lets us change the display locations for the player's cards and enemy's cards
+        // For simplicity's sake, the player will always be on the left and the enemy on the right
+        // These seemingly random values for x and y were obtained from the original CJ code and/or experimentally
+        if (type == Player)
+            x = 215;
+        else
+            x = 315; // TODO: tweak this value
+
+        // The same y-value is used for both the Player's and the Enemy's cards, so we can define it here
+        var y:Int = 165;
+
+        // Set the card's x and y position with an animation
+        // Also scale the card up in this animation
+        Actuate.tween(body, .6, 
+            {
+                x: x, 
+                y: y, 
+                scaleX: .375, 
+                scaleY: .375
+            }
+        );
     }
 
     // Set the orientation of the card
@@ -219,11 +299,8 @@ class Card {
 
     // Show the cards on the screen for the first time
     public function show(offset:Int):Void {
-        // The initial x-value for the Player and Enemy change
+        // The initial x-value for the Player and Enemy cards
         var initialX:Int;
-
-        // The same y-value is used for both the Player's and the Enemy's cards, so we can define it here
-        var y:Int = 385;
 
         // This if-statement lets us change the display locations for the player's cards and enemy's cards
         // For simplicity's sake, the player will always be on the left and the enemy on the right
@@ -232,6 +309,9 @@ class Card {
             initialX = 50;
         else
             initialX = 530;
+
+        // The same y-value is used for both the Player's and the Enemy's cards, so we can define it here
+        var y:Int = 385;
 
         // Set the card's x and y position with an animation
         // The initial x-value of 50 is added to the offset multiplied by the width

@@ -85,6 +85,13 @@ class Penguin {
         this.username = username;
     }
 
+    // Set the player's deck
+    // We receive an array of the indecies of the cards in the JSON array
+    // We can then create Card objects from the JSON data
+    public function setDeck(cardIndecies:Array<Int>):Void {
+        deck.generateCards(cardIndecies);
+    }
+
     private function setupPenguin(mc:MovieClip) {
         // Store the mc object in this.penguin
         penguin = mc;
