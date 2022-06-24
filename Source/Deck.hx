@@ -54,8 +54,17 @@ class Deck {
                     // Therefore, if the card DOES have it, then it means this is the first time it has been clicked
                     // Thus, we can safely tell the server a card has been selected
                     if (card.hasEventListener(MouseEvent.ROLL_OVER)) {
+                        // Get the power and element type of the card
+                        var stats:Map<String, Int> = card.getStats();
+
                         // We pass in the index inside the deck so the server knows what card has been selected
-                        Client.sendPacket('selected card', { 'indexInDeck': i } );
+                        Client.sendRoomPacket('selected card', 
+                            { 
+                                'indexInDeck': i,
+                                'power': stats['power'],
+                                'element': stats['element']
+                            } 
+                        );
                     }
 
                     for (card in cards)

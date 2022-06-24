@@ -32,6 +32,11 @@ class Message {
 
         btn = game.getChild('dialogue_btn', box);
 
+        // When the Ok button is hovered over, make the button appear clickable
+        // When it is no longer being hovered over, revert this change
+        btn.addEventListener(MouseEvent.ROLL_OVER, (event:MouseEvent) -> Mouse.cursor = MouseCursor.BUTTON);
+        btn.addEventListener(MouseEvent.ROLL_OUT,  (event:MouseEvent) -> Mouse.cursor = MouseCursor.ARROW);
+        
         // When the Ok button is clicked, hide the dialogue box and set the mouse cursor back to the normal arrow
         btn.addEventListener(MouseEvent.CLICK, (event:MouseEvent) -> {
             box.visible = false;

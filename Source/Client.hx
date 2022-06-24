@@ -1,5 +1,6 @@
 package;
 
+import haxe.DynamicAccess;
 import haxe.Json;
 
 import js.html.MessageEvent;
@@ -12,6 +13,8 @@ class Client {
 
     private var port:Int = 8080;
     private static var ws:WebSocket;
+
+    private static var roomID:String;
 
     private var setup:Bool = false;
 
@@ -38,60 +41,72 @@ class Client {
         ws.onopen = () -> {
             trace('Connected to server');
 
+            // We set the username and deck here since we have confirmed that we are connected to the server
+            player.setUsername(username);
+            player.setDeck(deck);
+
+            // Until we receive the "begin" packet, we know we have to wait for another client
+            Message.prompt('Please wait for another client...', true);
+
+            // Give the server the information to store
             sendPacket('store client data', { 'username': username, 'deck': deck });
         }
 
         ws.onmessage = (msg: MessageEvent) -> {
-            var data:Dynamic = Json.parse(msg.data);
+            var data:DynamicAccess<Dynamic> = Json.parse(msg.data);
 
-            switch (data.type) {
-                // Wait for another client to join the queue
-                // We set the username and deck here since we have confirmed that we are connected to the server
-                case 'wait':
-                    player.setUsername(username);
-                    player.setDeck(deck);
+            // Make sure that the packet has a type
+            if (!data.exists('type'))
+                return;
 
-                    Message.prompt('Please wait for another client...', true);
-
-                // We need to get the enemy's information
-                // This packet is so the OTHER client gets OUR information (the client is the enemy in this case)
-                // TODO: make it so we get the deck from the database
-                case 'get client info':
-                    sendPacket('send client info', { 'name': username, 'deck': [0, 1, 2, 3, 4] });
-                
-                // Now that we have the other client's info, we can set it accordingly
-                case 'set client info':
-                    enemy.setUsername(data.name);
-                    enemy.setDeck(data.deck);
-
-                    // Since we have received all the information we need, we can tell the server we are ready
-                    sendPacket('ready');
-
+            switch (data.get('type')) {
                 // Both clients are ready, so we can begin the match
                 case 'begin':
                     // Only handle this packet if the client isn't already setup
-                    if (!setup) {
+                    // We can probably remove this later once we have a proper room system
+                    // We also want to make sure the data object has the 'name' and 'deck' property
+                    // The 'room ID' property is also important
+                    trace(data);
+                    if (!setup && (data.exists('username') && data.exists('deck') && data.exists('room ID'))) {
                         setup = true;
 
+                        // Set the username and deck of the enemy
+                        enemy.setUsername(data.get('username'));
+                        enemy.setDeck(data.get('deck'));
+
+                        // Store the room ID
+                        roomID = data.get('room ID');
+
+                        // Tell the user their battle is beginning
                         Message.prompt('Battle beginning...');
                         
+                        // Setup the player and the enemy
                         player.setup();
                         enemy.setup();
                     }
 
                 // An unknown packet is being handled
                 default:
-                    trace('Unknown message type: ' + Std.string(msg.data));
+                    trace('Unknown packet type: ' + Std.string(data.get('type')));
             }
         }
     }
 
-    // This function is static and public so that other classes can easily use it without weird passing of class instances
-    public static function sendPacket(type:String, ?args:Dynamic):Void {
+    private function sendPacket(type:String, ?args:Dynamic):Void {
         // Join the type of the packet with its arguments
         ws.send(
             Json.stringify(
                 Object.assign({ 'type': type }, args)
+            )
+        );
+    }
+
+    // This function is static and public so that other classes can easily use it without weird passing of class instances
+    public static function sendRoomPacket(type:String, ?args:Dynamic):Void {
+        // Join the type of the packet and the room ID with its arguments
+        ws.send(
+            Json.stringify(
+                Object.assign({ 'type': type, 'room ID': roomID }, args)
             )
         );
     }

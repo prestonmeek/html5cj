@@ -130,6 +130,14 @@ class Card {
         game.addChild(body);
     }
 
+    // Return the power and element of the card for packet-sending purposes
+    public function getStats():Map<String, Int> {
+        return [
+            'power'   => data.power,
+            'element' => data.element
+        ];
+    }
+
     // Adds the event listener to the body
     // This is so the Deck class can add event listeners
     public function addEventListener(type:EventType<MouseEvent>, listener: (event:MouseEvent) -> Void):Void {
