@@ -1,5 +1,6 @@
 package;
 
+import openfl.display.DisplayObjectContainer;
 import openfl.Lib;
 import openfl.Assets;
 
@@ -19,6 +20,7 @@ import openfl.ui.MouseCursor;
 
 class Main extends Sprite {
 	private var game_mc:MovieClip;
+	private var load_mc:MovieClip;
 
 	private var client:Client;
 
@@ -44,7 +46,7 @@ class Main extends Sprite {
 		onResize();
 	}
 
-	public function getChild(childName:String, ?parent:MovieClip):Dynamic {
+	public function getChild(childName:String, ?parent:DisplayObjectContainer):Dynamic {
 		// We use unsafe cast here so that the returned object is always a Dynamic
 		// This way, we can set it to either a MovieClip, TextField, or Button simply by doing something like...
 		// var mc: MovieClip = getChild('mc_name');
@@ -66,6 +68,15 @@ class Main extends Sprite {
 		game_mc.removeChild(background);
 		addChild(background);
 
+		// Store the loading MovieClip
+		// Remove it from the game_mc 
+		// It is added to this class near the bottom of this method
+		load_mc = getChild('loading_mc');
+		load_mc.visible = false;
+
+		game_mc.removeChild(load_mc);
+
+		// Get the help menu MovieClip
 		var help_mc = getChild('mc_help');
 
 		var stop_frame   = 51;	// Stops at frame 51 instead of frame 1 so that the help menu doesn't snap above the screen
@@ -89,12 +100,27 @@ class Main extends Sprite {
 
 		// Add the game UI to this class
 		addChild(game_mc);
+
+		// Add the loading MovieClip in front of the game UI
+		// Technically, this is unnecessary as it is re-added in the Message class
+		// However, this is just to be safe
+		addChild(load_mc);
 	}
 
 	// Adds children behind the game UI
 	// This ensures that the help panel is always in front of these children (namely the penguins)
 	public function addChildBehindUI(child:DisplayObject):Void {
 		addChildAt(child, getChildIndex(game_mc));
+	}
+
+	// Show the loading icon
+	public function load():Void {
+		load_mc.visible = true;
+	}
+
+	// Hide the loading icon
+	public function stopLoading():Void {
+		load_mc.visible = false;
 	}
 
 	// Start the clock

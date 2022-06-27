@@ -58,15 +58,16 @@ class Deck {
                         var stats:Map<String, Int> = card.getStats();
 
                         // We pass in the index inside the deck so the server knows what card has been selected
-                        Client.sendRoomPacket('selected card', 
+                        Client.sendPacket('selected card', 
                             { 
-                                'indexInDeck': i,
+                                'index in deck': i,
                                 'power': stats['power'],
                                 'element': stats['element']
                             } 
                         );
                     }
 
+                    // Remove all other event listeners from the card
                     for (card in cards)
                         card.removeEventListeners();
                 });
@@ -102,5 +103,9 @@ class Deck {
             for (i in 0...cards.length)
                 cards[i].show(i);
         }
+    }
+
+    public function selectCard(index:Int):Void {
+        cards[index].select();
     }
 }

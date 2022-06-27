@@ -66,13 +66,17 @@ class Penguin {
         // I'm not exactly sure why but this only works with the "penguin" object's children, not the object itself
         // This changes the main penguin MovieClip to the ambient/idle animation
         body.addFrameScript(body.totalFrames - 1, () -> {
-            // Remove the penguin MovieClip and re-add it as the idle animation
-            game.removeChild(penguin);
-            setupPenguin(Assets.getMovieClip('ambient:ambient'));
+            // Stop the penguin from animating
+            // We will switch to the idle animation once both clients are ready (see setIdle method)
+            penguin.stopAllMovieClips();
 
-            // Setup the deck and show the cards
-            deck.setup();
-		    deck.show();
+            // Tell the server we are ready to begin card selection
+            // We only want to do this once, so only do it if we are of the Player type (Enemy would also work fine)
+            if (type == Player)
+                Client.sendPacket('ready for card selection');
+
+            // Have the game load in the meantime
+            game.load();
         });
 
         // Set the player's username text so it is shown on the screen
@@ -85,11 +89,29 @@ class Penguin {
         this.username = username;
     }
 
+    // Show the idle animation of the player
+    public function setIdleAnimation():Void {
+        // Remove the penguin MovieClip and re-add it as the idle animation
+        game.removeChild(penguin);
+        setupPenguin(Assets.getMovieClip('ambient:ambient'));
+    }
+
     // Set the player's deck
     // We receive an array of the indecies of the cards in the JSON array
     // We can then create Card objects from the JSON data
     public function setDeck(cardIndecies:Array<Int>):Void {
         deck.generateCards(cardIndecies);
+    }
+
+    // Show all the cards of the player's deck
+    public function displayDeck():Void {
+        deck.setup();
+		deck.show();
+    }
+
+    // Select a card and bring it to the center of the screen
+    public function selectCard(index:Int):Void {
+        deck.selectCard(index);
     }
 
     private function setupPenguin(mc:MovieClip) {
@@ -116,6 +138,7 @@ class Penguin {
         cast(penguin.getChildByName('sensay_mc'), MovieClip).visible = false;
 
         // Set the penguin and belt color
+        // TODO: change these default colors
         setColor('red');
         setBeltColor('black');
 

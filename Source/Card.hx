@@ -192,6 +192,12 @@ class Card {
         // Make sure the card is on frame 1
         setOrientation(Front);
 
+        // Show that the card that has been selected
+        select();
+    }
+
+    // Animate the card to tween to the middle of the screen, showing it has been selected
+    public function select():Void {
         // The x-value for the Player and Enemy cards
         var x:Int;
 
@@ -201,7 +207,7 @@ class Card {
         if (type == Player)
             x = 215;
         else
-            x = 315; // TODO: tweak this value
+            x = 440;
 
         // The same y-value is used for both the Player's and the Enemy's cards, so we can define it here
         var y:Int = 165;

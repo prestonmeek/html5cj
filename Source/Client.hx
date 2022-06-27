@@ -61,7 +61,7 @@ class Client {
 
             switch (data.get('type')) {
                 // Both clients are ready, so we can begin the match
-                case 'begin':
+                case 'begin match':
                     // Only handle this packet if the client isn't already setup
                     // We can probably remove this later once we have a proper room system
                     // We also want to make sure the data object has the 'name' and 'deck' property
@@ -84,6 +84,30 @@ class Client {
                         player.setup();
                         enemy.setup();
                     }
+                    
+                // Both clients are in-sync and ready to begin card selection
+                case 'begin card selection':
+                    // The game no longer needs to be loading
+                    game.stopLoading();
+
+                    player.setIdleAnimation();
+                    player.displayDeck();
+
+                    enemy.setIdleAnimation();
+                    enemy.displayDeck();
+
+                // Show that the enemy has selected a card
+                case 'show card selection':
+                    if (data.exists('index in deck') && Std.is(data['index in deck'], Int))
+                        // We do 4 - data['index in deck'] so that the card that is selected is mirrored
+                        // Basically, index 0 will reveal index 4, index 1 will reveal index 3, and so on
+                        // This is done because due to how the cards are ordered, it makes most sense to invert the selection
+                        // This doesn't *really* make much of a difference, it's more so just for minor aesthetic purposes
+                        enemy.selectCard(4 - data['index in deck']);
+
+                // After both clients have selected a card, show the result of the finished round
+                case 'round over':
+                    trace(data['result']);
 
                 // An unknown packet is being handled
                 default:
@@ -92,21 +116,12 @@ class Client {
         }
     }
 
-    private function sendPacket(type:String, ?args:Dynamic):Void {
+    // This function is static and public so that other classes can easily use it without weird passing of class instances
+    public static function sendPacket(type:String, ?args:Dynamic):Void {
         // Join the type of the packet with its arguments
         ws.send(
             Json.stringify(
                 Object.assign({ 'type': type }, args)
-            )
-        );
-    }
-
-    // This function is static and public so that other classes can easily use it without weird passing of class instances
-    public static function sendRoomPacket(type:String, ?args:Dynamic):Void {
-        // Join the type of the packet and the room ID with its arguments
-        ws.send(
-            Json.stringify(
-                Object.assign({ 'type': type, 'room ID': roomID }, args)
             )
         );
     }
