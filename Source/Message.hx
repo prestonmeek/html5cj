@@ -50,7 +50,7 @@ class Message {
         // Just think of this load as part of the box, while the Main class' load as part of the entire game
         // We also have to make sure that the parent for the getChild method is the game class itself, not game_mc
         // This is because we remove the loading icon from game_mc and add it to the Main class directly
-        load = game.getChild('loading_mc');
+        load = game.getChild('loading_mc', game);
         
         load.visible = false;
 

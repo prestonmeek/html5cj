@@ -12,6 +12,8 @@ class Deck {
 
     private var cards:Array<Card>;
 
+    private var selectedCard:Card;
+
     public function new(game:Main, type:PenguinType) {
         this.game = game;
         this.type = type;
@@ -105,7 +107,16 @@ class Deck {
         }
     }
 
+    // Store the selected card and show it being selected
     public function selectCard(index:Int):Void {
-        cards[index].select();
+        selectedCard = cards[index];
+        selectedCard.select();
+    }
+
+    // Flip the selected card
+    // Only flip a card if there is a selected card and we are the Enemy's deck
+    public function flipCard():Void {
+        if (type == Enemy && selectedCard != null)
+            selectedCard.flip();
     }
 }

@@ -52,6 +52,7 @@ class Server extends WebSocketServer {
             ws.on('message', (packet: string) => this.handlePacket(ws, packet))
 
             ws.on('close', () => {
+                // TODO: remove clients in rooms from rooms, not the queue array (since they left the queue)
                 removeFromArray(this.queue, ws)
                 console.log(`Removed disconnected client from queue. Length: ${this.queue.length}`)
             })

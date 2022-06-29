@@ -99,15 +99,11 @@ class Client {
                 // Show that the enemy has selected a card
                 case 'show card selection':
                     if (data.exists('index in deck') && Std.is(data['index in deck'], Int))
-                        // We do 4 - data['index in deck'] so that the card that is selected is mirrored
-                        // Basically, index 0 will reveal index 4, index 1 will reveal index 3, and so on
-                        // This is done because due to how the cards are ordered, it makes most sense to invert the selection
-                        // This doesn't *really* make much of a difference, it's more so just for minor aesthetic purposes
-                        enemy.selectCard(4 - data['index in deck']);
+                        enemy.selectCard(data['index in deck']);
 
                 // After both clients have selected a card, show the result of the finished round
                 case 'round over':
-                    trace(data['result']);
+                    enemy.flipCard();
 
                 // An unknown packet is being handled
                 default:

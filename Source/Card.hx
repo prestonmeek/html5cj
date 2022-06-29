@@ -9,6 +9,8 @@ import openfl.Assets;
 import openfl.display.MovieClip;
 import openfl.display.DisplayObject;
 
+import openfl.filters.BlurFilter;
+
 import openfl.text.TextField;
 
 import openfl.events.MouseEvent;
@@ -52,13 +54,7 @@ class Card {
 
     private var icon:MovieClip;
 
-    // For some reason, the front-facing cards use the width of the "power" child, not the "body" child
-    // However, the back facing cards do use the "body" child's width
-    // I have no idea why it works this way
-    // Therefore, I use custom width and height attributes based on the orientation of the card
-    // Initially, the Player's cards are facing the front and the enemy's cards are facing the back
-    private var width:Float;
-    private var height:Float;
+    private var dist:Float;
 
     public function new(game:Main, type:PenguinType, index:Int) {
         this.game = game;
@@ -97,13 +93,27 @@ class Card {
 
         // The power text field must be accessed within a child MovieClip
         power = game.getChild('tf_pt', cast(body.getChildByName('mc_pt'), MovieClip));
+
+        // The distance for separating the cards in the deck on the bottom of the screen
+        // For some reason, the front-facing cards use the distance/width of the "power" child, not the "body" child
+        // However, the back facing cards do use the "body" child's distance/width
+        // I have no idea why it works this way, but that's why the dist variable exists
+        // These values are roughly equal to power.width and body.width
+        // I just used exact values rather than the dynamic values since body.width doesn't work until the proper frame is set
+        // That isn't done until the setup method is called, so these estimated values work just fine
+        if (type == Player)
+            dist = 72;
+        else
+            dist = 35;
     }
 
     // Setup the visual aspects of the card MovieClip
     public function setup():Void {
         // Set the card's initial x and y position
         // It will be positioned at the bottom center of the screen
-        body.x = (game.getScreenWidth() - width) / 2;
+        // We use dist here instead of width since dist essentially acts as the width
+        // Since it is the unit used to space the cards out, it will be equivalent to the seeming width
+        body.x = (game.getScreenWidth() - dist) / 2;
         body.y = game.getScreenHeight();
 
         // Get the icon MovieClip based on the ID of the card as stored in the JSON file
@@ -197,7 +207,7 @@ class Card {
     }
 
     // Animate the card to tween to the middle of the screen, showing it has been selected
-    public function select():Void {
+    public function select(?callback:Dynamic):Void {
         // The x-value for the Player and Enemy cards
         var x:Int;
 
@@ -224,6 +234,55 @@ class Card {
         );
     }
 
+    // Flip the enemy's card, revealing it to the player
+    public function flip():Void {
+        if (type != Enemy)
+            return;
+
+        // We add a two-second delay here to make sure that all tweens are completed
+        Actuate.timer(2).onComplete(() -> {
+            // We store the proper scaleX and scaleY so we can tween the card back to its original scale
+            // We do this at the start of all the tweening since setOrientation method sets the scaleX to when the card is in your deck
+            // We do it after the delay to make sure all tweens are completed
+            // This is smaller than when a card has been selected
+            var oldScaleX:Float = body.scaleX;
+            var oldScaleY:Float = body.scaleY;
+
+            // We also want to store the width of the body
+            // This is because when we change the orientation/body frame of the card, its width changes
+            // This behavior is weird but I talk about it a bit near the bottom of the constructor of this class
+            var oldWidth:Float = body.width;
+
+            // This value was determined experimentally
+            var duration:Float = 0.2;
+            
+            // We then blur the card on the x-axis so the flip looks more realistic
+            Actuate.effects(body, duration).filter(BlurFilter, { blurX: 2, quality: 2 });
+
+            // We make it so the card shrinks to a scale X of 0
+            // We also make it move towards its center
+            // Basically, think of this like pushing its sides together towards the center until it appears to have 0 width
+            Actuate.tween(body, duration, { scaleX: 0, x: body.x + (oldWidth / 2) }).onComplete(() -> {
+                // Flip the card to the front
+                setOrientation(Front);
+                
+                // We then reset the actual scaleX back to 0 (since this was reverted in the setOrientation method)
+                // We also reset to the original scaleY
+                body.scaleX = 0;
+                body.scaleY = oldScaleY;
+
+                // Remove the card's blur effect after it is partly complete with the second flip animation (the tween below)
+                // This gives the blur a more natural feel as it is removed within the animation
+                // The / 2 was determined experimentally
+                Actuate.timer(duration / 2).onComplete(() -> body.filters = null);
+
+                // Return the card to its original position and scale
+                // The * 3 was determined experimentally
+                Actuate.tween(body, duration * 3, { scaleX: oldScaleX, x: body.x - (oldWidth / 2) });
+            });
+        });
+    }
+
     // Set the orientation of the card
     private function setOrientation(orientation:CardOrientation, ?frame:Int):Void {
         // Frame 1 is the default front-facing frame
@@ -241,20 +300,11 @@ class Card {
         // The new scaleX and scaleY of the card (to scale it down)
         var scale:Float;
 
-        // The parent that the custom width and height attributes use based on the orientation of the card
-        // The reasoning for this is explained above the width and height declarations
-        // The reason we store the parent and not just the width and height is because the body must be scaled down first
-        // DisplayObject is used since dimensionsParent can be either TextField or MovieClip
-        var dimensionsParent:DisplayObject;
-
-         // If the card is facing forward, set its color, icon, element, and power
+        // If the card is facing forward, set its color, icon, element, and power
         // Otherwise, hide them (since the back side doesn't show an element or power)
         if (orientation == Front) {
             // This number come from the original CJ code
             scale = .275;
-
-            // Front-facing cards use the "power" child to get their width and height
-            dimensionsParent = power;
 
             // We will always see the icon, element, and power (and sometimes glow) of a front-facing card
             // Make sure all of these are visible
@@ -292,9 +342,6 @@ class Card {
             // This number come from the original CJ code
             scale = .15;
 
-            // Back-facing cards use the "body" child to get their width and height
-            dimensionsParent = body;
-
             // We will never see the icon, element, glow, or power of a back-facing card
             // Therefore, we can just hide them
             icon.visible  = false;
@@ -306,9 +353,6 @@ class Card {
         // Set the scaleX, scaleY, width, and height of the card
         body.scaleX = scale;
         body.scaleY = scale;
-
-        width  = dimensionsParent.width;
-        height = dimensionsParent.height;
     }
 
     // Show the cards on the screen for the first time
@@ -328,11 +372,11 @@ class Card {
         var y:Int = 385;
 
         // Set the card's x and y position with an animation
-        // The initial x-value of 50 is added to the offset multiplied by the width
+        // The initial x-value of 50 is added to the offset multiplied by the proper distance between each card
         // This properly spaces the cards out
         Actuate.tween(body, .5, 
             {
-                x: initialX + (offset * width),
+                x: initialX + (offset * dist),
                 y: y
             }
         );

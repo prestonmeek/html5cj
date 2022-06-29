@@ -114,6 +114,13 @@ class Penguin {
         deck.selectCard(index);
     }
 
+    // Flip the selected card, revealing it to the player
+    // Only flip the card if we are the enemy
+    public function flipCard():Void {
+        if (type == Enemy)
+            deck.flipCard();
+    }
+
     private function setupPenguin(mc:MovieClip) {
         // Store the mc object in this.penguin
         penguin = mc;
