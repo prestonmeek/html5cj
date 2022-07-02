@@ -96,6 +96,31 @@ class Penguin {
         setupPenguin(Assets.getMovieClip('ambient:ambient'));
     }
 
+    // Show the battle animation of the player
+    public function setBattleAnimation(battleMC:MovieClip):Void {
+        // Remove the penguin MovieClip and re-add it as the battle animation
+        game.removeChild(penguin);
+        setupPenguin(battleMC);
+
+        // Add frame script to the last frame of the battle animation
+        // Body (a child of "penguin" object) is used here, but any child can be used
+        // I'm not exactly sure why but this only works with the "penguin" object's children, not the object itself
+        // This changes the main penguin MovieClip back to the ambient/idle animation
+        body.addFrameScript(body.totalFrames - 1, () -> {
+            // Stop the penguin from animating
+            // We will switch to the idle animation once both clients are ready (see setIdle method)
+            penguin.stopAllMovieClips();
+
+            // Tell the server we are ready to resume the match
+            // We only want to do this once, so only do it if we are of the Player type (Enemy would also work fine)
+            if (type == Player)
+                Client.sendPacket('ready to resume match');
+
+            // Have the game load in the meantime
+            game.load();
+        });
+    }
+
     // Set the player's deck
     // We receive an array of the indecies of the cards in the JSON array
     // We can then create Card objects from the JSON data
@@ -116,9 +141,26 @@ class Penguin {
 
     // Flip the selected card, revealing it to the player
     // Only flip the card if we are the enemy
-    public function flipCard():Void {
+    public function flipCard(?callback:() -> Void):Void {
         if (type == Enemy)
-            deck.flipCard();
+            deck.flipCard(callback);
+    }
+
+    // Remove the currently selected card from the scene
+    public function removeSelectedCard():Card {
+        return deck.removeSelectedCard();
+    }
+
+    // Add the important event listeners to all the cards
+    // Only do this if we are the Player
+    public function addCardEventListeners():Void {
+        if (type == Player)
+            deck.addEventListeners();
+    }
+
+    // Adds a new card to the deck, replacing the card that was just selected
+    public function addNewCard():Void {
+        deck.addNewCard();
     }
 
     private function setupPenguin(mc:MovieClip) {

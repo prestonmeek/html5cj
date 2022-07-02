@@ -25,7 +25,7 @@ interface Client extends WebSocket {
     ready: boolean,
     index: Number,
     roomID: string
-    cardChoice: CardChoice
+    cardChoice: CardChoice | null
 }
 
 class Server extends WebSocketServer {
@@ -162,9 +162,14 @@ class Server extends WebSocketServer {
                     return
 
                 // Once both clients are ready, tell both to begin card selection
+                // We also want to reset the ready attribute on both clients for later use
                 // We make sure both clients are in the same room
-                if (ws.ready && otherClient.ready && ws.roomID == otherClient.roomID)
+                if (ws.ready && otherClient.ready && ws.roomID == otherClient.roomID) {
+                    ws.ready = false
+                    otherClient.ready = false
+
                     this.broadcastToRoom('begin card selection', ws.roomID)
+                }
 
                 break
 
@@ -193,6 +198,10 @@ class Server extends WebSocketServer {
                 if (ws.cardChoice != null && otherClient.cardChoice != null) {
                     let winner: string = determineWinner(ws.cardChoice, otherClient.cardChoice)
 
+                    // Reset the card choices so this process can happen again
+                    ws.cardChoice = null
+                    otherClient.cardChoice = null
+
                     // If the client won, tell the client they are the winner and the other client the loser
                     // If the client lost, do the opposite
                     if (winner == 'client') {
@@ -211,11 +220,31 @@ class Server extends WebSocketServer {
                         this.sendPacket(ws, 'round over', {
                             'result': 'loser'
                         })
-                    } else if (winner == 'draw') {
+                    } else if (winner == 'tie') {
                         this.broadcastToRoom('round over', ws.roomID, { 
-                            'result': 'draw'
+                            'result': 'tie'
                         })
                     }
+                }
+
+                break
+
+            // The client is ready to resume the match
+            case 'ready to resume match':
+                ws.ready = true
+
+                // If the other client has the default value of the client (the other client was not properly assigned), return
+                if (otherClient == ws)
+                    return
+
+                // Once both clients are ready, tell both to resume card selection
+                // We also want to reset the ready attribute on both clients for later use
+                // We make sure both clients are in the same room
+                if (ws.ready && otherClient.ready && ws.roomID == otherClient.roomID) {
+                    ws.ready = false
+                    otherClient.ready = false
+
+                    this.broadcastToRoom('resume card selection', ws.roomID)
                 }
 
                 break
@@ -248,11 +277,11 @@ function determineWinner(client: CardChoice, otherClient: CardChoice) : string {
 
     // If the two clients used the same element, go by the power
     if (client.element == otherClient.element) {
-        // If the clients have equal power cards AND equal power elements, return a draw
+        // If the clients have equal power cards AND equal power elements, return a tie
         // If the client has a greater power card, return true
         // Otherwise, return false
         if (client.power == otherClient.power)
-            return 'draw'
+            return 'tie'
         else
             return client.power > otherClient.power ? 'client' : 'other client'
     } else {

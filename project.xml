@@ -20,6 +20,14 @@
 	<library path="Assets/ambient.swf" preload="true" />
 	<library path="Assets/walk.swf" preload="true" />
 
+	<library path="Assets/fire_attack.swf" preload="true" />
+	<library path="Assets/fire_react.swf" preload="true" />
+	<library path="Assets/water_attack.swf" preload="true" />
+	<library path="Assets/water_react.swf" preload="true" />
+	<library path="Assets/snow_attack.swf" preload="true" />
+	<library path="Assets/snow_react.swf" preload="true" />
+	<library path="Assets/tie.swf" preload="true" />
+
 	<library path="Assets/Icons/1.swf" preload="true" />
 	
 </project>

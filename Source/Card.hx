@@ -141,11 +141,17 @@ class Card {
     }
 
     // Return the power and element of the card for packet-sending purposes
-    public function getStats():Map<String, Int> {
+    // Everything is sent over as a string but the server handles power as a number
+    public function getStats():Map<String, String> {
         return [
             'power'   => data.power,
             'element' => data.element
         ];
+    }
+
+    // Return the element of the card
+    public function getElement():String {
+        return data.element;
     }
 
     // Adds the event listener to the body
@@ -155,11 +161,12 @@ class Card {
     }
 
     // This adds all the important event listeners
-    // This is NOT for the Deck class, this is just for better code (hence this is private)
-    private function addEventListeners():Void {
+    // We make sure we give the click event listener priority
+    // This is so that it always go before the click event listener added in the Deck class
+    public function addEventListeners():Void {
         body.addEventListener(MouseEvent.ROLL_OVER, onRollOver);
         body.addEventListener(MouseEvent.ROLL_OUT, onRollOut);
-        body.addEventListener(MouseEvent.CLICK, onClick);
+        body.addEventListener(MouseEvent.CLICK, onClick, false, 1);
     }
 
     // Checks if the Card body has an event listener
@@ -207,7 +214,7 @@ class Card {
     }
 
     // Animate the card to tween to the middle of the screen, showing it has been selected
-    public function select(?callback:Dynamic):Void {
+    public function select():Void {
         // The x-value for the Player and Enemy cards
         var x:Int;
 
@@ -235,7 +242,7 @@ class Card {
     }
 
     // Flip the enemy's card, revealing it to the player
-    public function flip():Void {
+    public function flip(?callback:() -> Void):Void {
         if (type != Enemy)
             return;
 
@@ -279,8 +286,20 @@ class Card {
                 // Return the card to its original position and scale
                 // The * 3 was determined experimentally
                 Actuate.tween(body, duration * 3, { scaleX: oldScaleX, x: body.x - (oldWidth / 2) });
+
+                // Delay two seconds to show the results
+                // After the delay, if a callback was passed in, run the calllback
+                Actuate.timer(2).onComplete(() -> {
+                    if (callback != null)
+                        callback();
+                });
             });
         });
+    }
+
+    // Remove the card from the scene
+    public function remove():Void {
+        game.removeChild(body);
     }
 
     // Set the orientation of the card
