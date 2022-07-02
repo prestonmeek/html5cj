@@ -163,6 +163,11 @@ class Penguin {
         deck.addNewCard();
     }
 
+    // Scores a card, saving the scored card in the Deck class
+    public function scoreCard(card:Card):Void {
+        deck.scoreCard(card);
+    }
+
     private function setupPenguin(mc:MovieClip) {
         // Store the mc object in this.penguin
         penguin = mc;

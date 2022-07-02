@@ -21,6 +21,8 @@ import openfl.ui.MouseCursor;
 class Main extends Sprite {
 	private var game_mc:MovieClip;
 	private var load_mc:MovieClip;
+	private var help_mc:MovieClip;
+	private var border_mc:MovieClip;
 
 	private var client:Client;
 
@@ -76,8 +78,12 @@ class Main extends Sprite {
 
 		game_mc.removeChild(load_mc);
 
-		// Get the help menu MovieClip
-		var help_mc = getChild('mc_help');
+		// Store the help menu MovieClip
+		// Remove it from the game_mc 
+		// It is added to this class near the bottom of this method
+		help_mc = getChild('mc_help');
+
+		game_mc.removeChild(help_mc);
 
 		var stop_frame   = 51;	// Stops at frame 51 instead of frame 1 so that the help menu doesn't snap above the screen
 		var skip_frame   = 19;	// Skips to the skipTo frame to avoid the menu closing before the user clicks it again
@@ -98,19 +104,47 @@ class Main extends Sprite {
 		// When the help menu is clicked, it opens
 		help_mc.addEventListener(MouseEvent.CLICK, (event:MouseEvent) -> help_mc.play());
 
-		// Add the game UI to this class
+		// Store the border MovieClip
+		// Remove it from the game_mc 
+		// It is added to this class near the bottom of this method
+		border_mc = getChild('mc_border');
+
+		game_mc.removeChild(border_mc);
+
+		// Add the game UI (NOT the help menu; this is mainly just the bottom bar where cards are shown) to this class
 		addChild(game_mc);
 
-		// Add the loading MovieClip in front of the game UI
+		// Then, add the help menu to this class
+		addChild(help_mc);
+
+		// Then, add the border to this class
+		// This ordering of adding children ensures the help menu is behind the border
+		addChild(border_mc);
+
+		// Add the loading MovieClip in front of every other child of this class
 		// Technically, this is unnecessary as it is re-added in the Message class
 		// However, this is just to be safe
 		addChild(load_mc);
 	}
 
 	// Adds children behind the game UI
-	// This ensures that the help panel is always in front of these children (namely the penguins)
+	// This ensures that the bottom panel is always in front of these children (namely the penguins)
 	public function addChildBehindUI(child:DisplayObject):Void {
 		addChildAt(child, getChildIndex(game_mc));
+	}
+
+	// Adds children behind the help menu UI
+	// This ensures that the help menu is always in front of these children (namely the cards)
+	public function addChildBehindHelp(child:DisplayObject):Void {
+		addChildAt(child, getChildIndex(help_mc));
+	}
+
+	// Sets a child behind the help menu UI
+	// An offset can be passed in so that the child goes even further back
+	// This is mainly for cards that have been scored
+	public function setChildBehindHelp(child:DisplayObject, offset:Int = 0):Void {
+		// We subtract 1 to ensure everything stays behind the help menu
+		setChildIndex(child, getChildIndex(help_mc) - offset - 1);
 	}
 
 	// Show the loading icon

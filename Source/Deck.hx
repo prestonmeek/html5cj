@@ -16,9 +16,25 @@ class Deck {
 
     private var removedIndex:Int;
 
+    private var scoredCards:Array<Card>;
+
+    // The scored cards count is global across both Deck classes, so it is static
+    // The scored elements count map is specific to each Deck class instance, so it is not static
+    private static var scoredCardsCount:Int;
+    private var scoredElementsCount:Map<String, Int>;
+
     public function new(game:Main, type:PenguinType) {
         this.game = game;
         this.type = type;
+
+        // Scored cards needs to be defined here because its length is read when it could still be empty
+        scoredCards = [];
+
+        scoredElementsCount = [
+            'fire'  => 0,
+            'water' => 0,
+            'snow'  => 0
+        ];
     }
 
     // We generate the cards array based on the indecies in the passed-in array
@@ -129,14 +145,10 @@ class Deck {
             selectedCard.flip(callback);
     }
 
-    // Remove the currently selected card from the scene
-    // This also removes the selected card from the cards array and this.selectedCard
+    // Removes the currently selected card from the cards array and this.selectedCard
     // We return the selected card in case it needs to be used
     public function removeSelectedCard():Card {
         if (selectedCard != null) {
-            // Remove the selected card from the scene
-            selectedCard.remove();
-
             // Store the index of the selected card before we remove it so we can properly replace it later
             removedIndex = this.cards.indexOf(selectedCard);
             this.cards.remove(selectedCard);
@@ -182,5 +194,26 @@ class Deck {
         // This could also be Enemy here and it would work the same
         if (type == Player)
             game.startClock();
+    }
+
+    // Scores a card, saving the scored card in the scoredCards array
+    public function scoreCard(card:Card):Void {
+        // Display the card as scored
+        // We pass in the amount of cards of this card's element that have already been stored
+        // This is so the cards can properly overlap
+        // We also pass in the length of the scoredCards array
+        // This is so we can have new scored cards appear behind the previous ones (we need the total amount of already scored cards)
+        card.score(scoredElementsCount[card.getElement()], scoredCardsCount);
+
+        // Store the scored card in the scoredCards array
+        scoredCards.push(card);
+
+        // Increment the total amount of scored cards
+        scoredCardsCount += 1;
+
+        // After we score the card, we can update the amount of cards that have been scored for this card's element
+        scoredElementsCount[card.getElement()] += 1;
+
+        trace(scoredElementsCount);
     }
 }

@@ -118,9 +118,9 @@ class Client {
                         if (!data.exists('result'))
                             return null;
 
-                        // Remove the cards from the screen
-                        // We also tore the elements for the selected cards of the Player and Enemy
-                        // We must store these since we remove the selected card below
+                        // Remove the selected cards from the deck, but store them in these variables for use below
+                        // We do not remove them from the scene yet, since one of these cards will be scored
+                        // The remove method of the Card class is later called to remove the card from the scene
                         // TODO: add explosion when removing cards
                         var playerCard:Card = player.removeSelectedCard();
                         var enemyCard:Card  = enemy.removeSelectedCard();
@@ -140,6 +140,11 @@ class Client {
 
                             playerMC = Assets.getMovieClip(winningElement + '_attack:attack');
                             enemyMC  = Assets.getMovieClip(winningElement + '_react:react');
+
+                            // Score the Player's card
+                            // Remove the Enemy's card from the scene
+                            player.scoreCard(playerCard);
+                            enemyCard.remove();
                         } else if (data['result'] == 'loser') {
                             // Since the enemy won, get the element of their selected card
                             // This will be used to get the MovieClips for the Player and Enemy
@@ -147,10 +152,19 @@ class Client {
 
                             playerMC = Assets.getMovieClip(winningElement + '_react:react');
                             enemyMC  = Assets.getMovieClip(winningElement + '_attack:attack');
+
+                            // Remove the Player's card from the scene
+                            // Score the enemy's card
+                            playerCard.remove();
+                            enemy.scoreCard(enemyCard);
                         } else {
                             // If the results were a tie (or there's some error), get the tie MovieClip for both the player and the enemy
                             playerMC = Assets.getMovieClip('tie:tie');
                             enemyMC  = Assets.getMovieClip('tie:tie');
+
+                            // Remove both the Player's card and the Enemy's card
+                            playerCard.remove();
+                            enemyCard.remove();
                         }
 
                         player.setBattleAnimation(playerMC);

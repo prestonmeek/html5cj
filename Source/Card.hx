@@ -87,6 +87,7 @@ class Card {
         // Load the relevant components of the card MovieClip
         body = Assets.getMovieClip('card:card');
 
+        // Set the values for glow, elem, and color MovieClips
         glow  = game.getChild('mc_glow', body);
         elem  = game.getChild('mc_atr',  body);
         color = game.getChild('mc_col',  body);
@@ -137,7 +138,7 @@ class Card {
         }
 
         // Add the card to the game
-        game.addChild(body);
+        game.addChildBehindHelp(body);
     }
 
     // Return the power and element of the card for packet-sending purposes
@@ -248,12 +249,10 @@ class Card {
 
         // We add a two-second delay here to make sure that all tweens are completed
         Actuate.timer(2).onComplete(() -> {
-            // We store the proper scaleX and scaleY so we can tween the card back to its original scale
-            // We do this at the start of all the tweening since setOrientation method sets the scaleX to when the card is in your deck
+            // We store the original scaleX so we can tween the card back to its original scale
             // We do it after the delay to make sure all tweens are completed
             // This is smaller than when a card has been selected
             var oldScaleX:Float = body.scaleX;
-            var oldScaleY:Float = body.scaleY;
 
             // We also want to store the width of the body
             // This is because when we change the orientation/body frame of the card, its width changes
@@ -270,13 +269,8 @@ class Card {
             // We also make it move towards its center
             // Basically, think of this like pushing its sides together towards the center until it appears to have 0 width
             Actuate.tween(body, duration, { scaleX: 0, x: body.x + (oldWidth / 2) }).onComplete(() -> {
-                // Flip the card to the front
-                setOrientation(Front);
-                
-                // We then reset the actual scaleX back to 0 (since this was reverted in the setOrientation method)
-                // We also reset to the original scaleY
-                body.scaleX = 0;
-                body.scaleY = oldScaleY;
+                // Flip the card to the front, using a scaleX of 0 and our current scaleY
+                setOrientation(Front, 1, 0, body.scaleY);
 
                 // Remove the card's blur effect after it is partly complete with the second flip animation (the tween below)
                 // This gives the blur a more natural feel as it is removed within the animation
@@ -287,9 +281,9 @@ class Card {
                 // The * 3 was determined experimentally
                 Actuate.tween(body, duration * 3, { scaleX: oldScaleX, x: body.x - (oldWidth / 2) });
 
-                // Delay two seconds to show the results
+                // Delay one and a half seconds to show the results
                 // After the delay, if a callback was passed in, run the calllback
-                Actuate.timer(2).onComplete(() -> {
+                Actuate.timer(1.5).onComplete(() -> {
                     if (callback != null)
                         callback();
                 });
@@ -302,8 +296,59 @@ class Card {
         game.removeChild(body);
     }
 
+    // Score the card, moving it to the top of the screen
+    public function score(offsetY:Int, scoredCardsCount:Int):Void {
+        trace(offsetY);
+        trace(scoredCardsCount);
+        // We set the card to a back-facing orientation at frame 6 (the score frame)
+        // We pass in our current scaleX and scaleY to retain them after changing our frame
+        setOrientation(Back, 6, body.scaleX, body.scaleY);
+
+        // We want to the new scored card to be directly behind the help menu UI
+        // We then push it back based on the amount of already scored cards
+        game.setChildBehindHelp(body, scoredCardsCount);
+
+        // Store the initial X and the initial Y
+        // The initial X changes for the Player and Enemy, but the initial Y is always the same
+        // These values were determined experimentally
+        var initialX:Int;
+
+        if (type == Player)
+            initialX = 53;
+        else
+            initialX = 555;
+
+        var initialY:Int = 40;
+
+        // Store the offset for the X position
+        // The Y offset is passed in as an argument
+        // The default position (0 offsets) is the first fire card that is scored
+        var offsetX:Int = 0;
+
+        // Set the X offset
+        // Water cards are second in the ordering from left-to-right, so they have an offset of 1
+        // Snow cards are last in the ordering from left-to-right, so they have an offset of 2
+        // We can ignore fire cards here since they will have an X offset of 0
+        switch (data.element) {
+            case 'water':
+                offsetX = 1;
+
+            case 'snow':
+                offsetX = 2;
+        }
+        
+        // Tween the card to its score position using its initial position values and any offsets
+        // The animation duration and the offset mulitpliers were determined experimentally
+        Actuate.tween(body, .75, 
+            { 
+                x: initialX + (offsetX * 50), 
+                y: initialY + (offsetY * 15)
+            }
+        );
+    }
+
     // Set the orientation of the card
-    private function setOrientation(orientation:CardOrientation, ?frame:Int):Void {
+    private function setOrientation(orientation:CardOrientation, ?frame:Int, ?scaleX:Float, ?scaleY:Float):Void {
         // Frame 1 is the default front-facing frame
         // Frame 5 is the default back-facing frame
         if (frame == null) {
@@ -315,6 +360,16 @@ class Card {
 
         // Set the frame of the card
         body.gotoAndStop(frame);
+
+        // We need to reassign the elem and color MovieClips
+        // This is because frame 6 (the scoring frame) actually uses different instances of these MovieClips
+        // We need to make sure that we are working with the correct ones at all times
+        // However, we only do this if we have either a front-facing card or a scoring card (frame == 6)
+        // Since back-facing cards do not have an element or a color, an error would be thrown
+        if (orientation == Front || frame == 6) {
+            elem  = game.getChild('mc_atr', body);
+            color = game.getChild('mc_col', body);
+        }
 
         // The new scaleX and scaleY of the card (to scale it down)
         var scale:Float;
@@ -361,17 +416,30 @@ class Card {
             // This number come from the original CJ code
             scale = .15;
 
-            // We will never see the icon, element, glow, or power of a back-facing card
-            // Therefore, we can just hide them
+            // We will *usually* never see the element of a back-facing card
+            // Therefore, we can just hide it in most cases
+            // However, if the frame is 6 (a scoring card), then we will need to set the color and the element
+            if (frame == 6) {
+                // Set the card color based on the JSON data
+                color.transform.colorTransform = data.color;
+
+                // Set the elem MovieClip frame equal to the frame of the stored element
+                // The frame of the element is accessed using the elements Map, which converts the element string to the frame integer
+                elem.gotoAndStop(elements[data.element]);
+            } else
+                elem.visible  = false;
+            
+            // We will never see the icon, glow, or power of a back-facing card, so we can always hide them
             icon.visible  = false;
-            elem.visible  = false;
             glow.visible  = false;
             power.visible = false;
         }
 
         // Set the scaleX, scaleY, width, and height of the card
-        body.scaleX = scale;
-        body.scaleY = scale;
+        // If the optional parameter was passed in, use it
+        // Otherwise, use the determined scale based on the orientation
+        body.scaleX = (scaleX != null ? scaleX : scale);
+        body.scaleY = (scaleY != null ? scaleY : scale);
     }
 
     // Show the cards on the screen for the first time
