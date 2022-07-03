@@ -44,6 +44,8 @@ class Card {
 
     private var data:Dynamic;
 
+    private var colorName:String;
+
     private var body:MovieClip;
 
     private var glow:MovieClip;
@@ -82,6 +84,8 @@ class Card {
             data.glow = game.getDynamicColor(colors.get(data.color).glow);
         }
         
+        // Store the name of the color for later use, and then override data.color to be the hex color
+        colorName  = data.color;
         data.color = game.getHexColor(Std.parseInt(colors[data.color].hex));
 
         // Load the relevant components of the card MovieClip
@@ -146,13 +150,19 @@ class Card {
     public function getStats():Map<String, String> {
         return [
             'power'   => data.power,
-            'element' => data.element
+            'element' => data.element,
+            'color'   => colorName
         ];
     }
 
     // Return the element of the card
     public function getElement():String {
         return data.element;
+    }
+
+    // Return the color of the card as a string
+    public function getColorName():String {
+        return colorName;
     }
 
     // Adds the event listener to the body
@@ -297,16 +307,14 @@ class Card {
     }
 
     // Score the card, moving it to the top of the screen
-    public function score(offsetY:Int, scoredCardsCount:Int):Void {
-        trace(offsetY);
-        trace(scoredCardsCount);
+    public function score(offsetY:Int):Void {
         // We set the card to a back-facing orientation at frame 6 (the score frame)
         // We pass in our current scaleX and scaleY to retain them after changing our frame
         setOrientation(Back, 6, body.scaleX, body.scaleY);
 
         // We want to the new scored card to be directly behind the help menu UI
         // We then push it back based on the amount of already scored cards
-        game.setChildBehindHelp(body, scoredCardsCount);
+        game.setScoredCardIndex(body);
 
         // Store the initial X and the initial Y
         // The initial X changes for the Player and Enemy, but the initial Y is always the same

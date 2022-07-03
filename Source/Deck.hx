@@ -18,16 +18,12 @@ class Deck {
 
     private var scoredCards:Array<Card>;
 
-    // The scored cards count is global across both Deck classes, so it is static
-    // The scored elements count map is specific to each Deck class instance, so it is not static
-    private static var scoredCardsCount:Int;
     private var scoredElementsCount:Map<String, Int>;
 
     public function new(game:Main, type:PenguinType) {
         this.game = game;
         this.type = type;
 
-        // Scored cards needs to be defined here because its length is read when it could still be empty
         scoredCards = [];
 
         scoredElementsCount = [
@@ -92,7 +88,8 @@ class Deck {
                     { 
                         'index in deck': index,
                         'power': stats['power'],
-                        'element': stats['element']
+                        'element': stats['element'],
+                        'color': stats['color']
                     } 
                 );
             }
@@ -174,10 +171,9 @@ class Deck {
     }
 
     // Adds a new card to the deck, replacing the card that was just selected
-    public function addNewCard():Void {
+    public function addNewCard(index:Int):Void {
         // Create a new card
-        // TODO: change the index to a non-arbitrary value (get it from available cards in database probably?)
-        var card:Card = new Card(game, type, 1);
+        var card:Card = new Card(game, type, index);
 
         // Setup the card, using the stored removed index for the event listener
         // This is because the removed index will be used as the index of this new card
@@ -203,13 +199,10 @@ class Deck {
         // This is so the cards can properly overlap
         // We also pass in the length of the scoredCards array
         // This is so we can have new scored cards appear behind the previous ones (we need the total amount of already scored cards)
-        card.score(scoredElementsCount[card.getElement()], scoredCardsCount);
+        card.score(scoredElementsCount[card.getElement()]);
 
         // Store the scored card in the scoredCards array
         scoredCards.push(card);
-
-        // Increment the total amount of scored cards
-        scoredCardsCount += 1;
 
         // After we score the card, we can update the amount of cards that have been scored for this card's element
         scoredElementsCount[card.getElement()] += 1;

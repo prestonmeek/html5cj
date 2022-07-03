@@ -33,5 +33,19 @@
         "glow": false,
         "element": "snow",
         "color": "yellow"
+    },
+    {
+        "id": 1,
+        "power": 5,
+        "glow": false,
+        "element": "fire",
+        "color": "green"
+    },
+    {
+        "id": 1,
+        "power": 7,
+        "glow": false,
+        "element": "fire",
+        "color": "red"
     }
 ]

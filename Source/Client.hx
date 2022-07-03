@@ -175,15 +175,21 @@ class Client {
                 // We need to re-add all the removed event listeners to each card for the Player
                 // We also new cards to the Player's and Enemy's decks, replacing the slot that they just clicked
                 case 'resume card selection':
+                    // If a new client card index or new other client card index was not passed in, simply return
+                    if (!data.exists('new client card index') || !data.exists('new other client card index'))
+                        return;
+
                     // The game no longer needs to be loading
                     game.stopLoading();
 
+                    // NOTE: For adding new cards, we are treating the client as the Player and the other client as the Enemy
+
                     player.setIdleAnimation();
                     player.addCardEventListeners();
-                    player.addNewCard();
+                    player.addNewCard(data['new client card index']);
 
                     enemy.setIdleAnimation();
-                    enemy.addNewCard();
+                    enemy.addNewCard(data['new other client card index']);
 
                 // An unknown packet is being handled
                 default:

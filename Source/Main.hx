@@ -139,12 +139,13 @@ class Main extends Sprite {
 		addChildAt(child, getChildIndex(help_mc));
 	}
 
-	// Sets a child behind the help menu UI
-	// An offset can be passed in so that the child goes even further back
-	// This is mainly for cards that have been scored
-	public function setChildBehindHelp(child:DisplayObject, offset:Int = 0):Void {
-		// We subtract 1 to ensure everything stays behind the help menu
-		setChildIndex(child, getChildIndex(help_mc) - offset - 1);
+	// Set the index of a scored card
+	// This is so that they stack properly on the top of the screen
+	public function setScoredCardIndex(card:DisplayObject):Void {
+		// We set the card's index to be one in front of the game_mc MovieClip
+		// This way, all cards that are scored are moved behind all other cards in the z-ordering
+		// This ensures that stacking will happen properly
+		setChildIndex(card, getChildIndex(game_mc) + 1);
 	}
 
 	// Show the loading icon

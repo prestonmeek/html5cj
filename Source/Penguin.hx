@@ -159,8 +159,8 @@ class Penguin {
     }
 
     // Adds a new card to the deck, replacing the card that was just selected
-    public function addNewCard():Void {
-        deck.addNewCard();
+    public function addNewCard(index:Int):Void {
+        deck.addNewCard(index);
     }
 
     // Scores a card, saving the scored card in the Deck class
