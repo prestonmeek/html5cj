@@ -113,10 +113,8 @@ class Client {
                     // Run the callback after the flip animation is completed
                     enemy.flipCard(() -> {
                         // If there are no results provided, just return
-                        // The use of "null" is required here since it is a void method
-                        // This is the same as returning nothing
                         if (!data.exists('result'))
-                            return null;
+                            return;
 
                         // Remove the selected cards from the deck, but store them in these variables for use below
                         // We do not remove them from the scene yet, since one of these cards will be scored
@@ -194,12 +192,27 @@ class Client {
 
                 // The enemy has disconnected, so the game can no longer continue
                 // Alert the player and pause all other game functionality
-                case 'enemy disconnected':
-                    // Stop the game from loading and alert the user that the enemy has left
+                case 'other client disconnected':
+                    // Stop the game from loading and stop the clock
                     game.stopLoading();
                     game.stopClock();
 
                     Message.prompt('Your opponent has disconnected.');
+
+                case 'match over':
+                    // If there are no results provided, just return
+                    if (!data.exists('result'))
+                        return;
+
+                    // Stop the game from loading and stop the clock
+                    game.stopLoading();
+                    game.stopClock();
+
+                    // TODO: have the client go back to the queue page or whatever it is to find a new match
+                    if (data['result'] == 'winner')
+                        Message.prompt('You won!');
+                    else if (data['result'] == 'loser')
+                        Message.prompt(enemy.getUsername() + ' won!');
 
                 // An unknown packet is being handled
                 default:

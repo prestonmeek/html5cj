@@ -51,7 +51,7 @@ class Server extends WebSocketServer {
 
                     // If there is still another client in this room, tell them their opponent has disconnected
                     if (this.rooms[ws.roomID].length == 1)
-                        this.broadcastToRoom('enemy disconnected', ws.roomID)
+                        this.broadcastToRoom('other client disconnected', ws.roomID)
                 } else
                     removeFromArray(this.queue, ws)
 
@@ -252,11 +252,29 @@ class Server extends WebSocketServer {
                     otherClient.ready = false
 
                     // At this point, we want to know if someone has won the match
-                    // If someone has, tell both clients
+                    // If someone has, tell both clients and return from this function
                     // Otherwise, just tell them to resume card selection
-                    // TODO: actually do this lol
-                    if (determineMatchWinner(ws.elementColors) || determineMatchWinner(otherClient.elementColors))
-                        console.log('WE HAVE FOUND A WINNER!!!!')
+                    if (determineMatchWinner(ws.elementColors)) {
+                        sendPacket(ws, 'match over', {
+                            'result': 'winner'
+                        })
+
+                        sendPacket(otherClient, 'match over', {
+                            'result': 'loser'
+                        })
+
+                        return
+                    } else if (determineMatchWinner(otherClient.elementColors)) {
+                        sendPacket(ws, 'match over', {
+                            'result': 'loser'
+                        })
+
+                        sendPacket(otherClient, 'match over', {
+                            'result': 'winner'
+                        })
+
+                        return
+                    }
 
                     // TODO: change the card index to a non-arbitrary value (get it from available cards in database probably?)
                     const clientCardIndex: Number      = random.int(0, 6)

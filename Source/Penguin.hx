@@ -84,6 +84,11 @@ class Penguin {
             nameField.text = username;
     }
 
+    // Get the username
+    public function getUsername():String {
+        return username;
+    }
+
     // Set the username text
     public function setUsername(username:String):Void {
         this.username = username;

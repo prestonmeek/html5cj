@@ -66,7 +66,6 @@ export function determineRoundWinner(client: Card, otherClient: Card) : string {
 
 // Returns a boolean saying if the passed-in card data would constitute winning the match
 export function determineMatchWinner(elements: ElementColors) : boolean {
-    console.log(elements)
     // The first check for determining a winner is if there are three colors in any element's set
     // Since the set will only have unique colors, we don't have to bother checking this ourselves
     // The second check for determing a winner is if there is a combination of fire, water, and snow with DIFFERENT colors
@@ -92,8 +91,6 @@ export function determineMatchWinner(elements: ElementColors) : boolean {
             }
         }
     }
-
-    console.log(winningColors)
 
     // If a combination of exactly three elements with unique colors was found, return true
     if (winningColors.size == 3)
