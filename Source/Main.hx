@@ -37,8 +37,10 @@ class Main extends Sprite {
 
 		setupDisplay();
 
-		// NOTE: Message.init() should come before anything else in this file (setupDisplay must come before it, though)
+		// NOTE: Message.init() and Explosion.init() should come before anything else in this file 
+		// The method setupDisplay must come before it, though
 		Message.init(this);
+		Explosion.init(this);
 
 		client = new Client(this);
 

@@ -121,9 +121,10 @@ class Client {
                         // Remove the selected cards from the deck, but store them in these variables for use below
                         // We do not remove them from the scene yet, since one of these cards will be scored
                         // The remove method of the Card class is later called to remove the card from the scene
-                        // TODO: add explosion when removing cards
                         var playerCard:Card = player.removeSelectedCard();
                         var enemyCard:Card  = enemy.removeSelectedCard();
+
+                        Explosion.play(data['result']);
 
                         // Initialize the player and enemy MovieClips for the battle animations
                         // They will be the tie animation by default
