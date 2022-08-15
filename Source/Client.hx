@@ -191,6 +191,15 @@ class Client {
                     enemy.setIdleAnimation();
                     enemy.addNewCard(data['new other client card index']);
 
+                // The enemy has disconnected, so the game can no longer continue
+                // Alert the player and pause all other game functionality
+                case 'enemy disconnected':
+                    // Stop the game from loading and alert the user that the enemy has left
+                    game.stopLoading();
+                    game.stopClock();
+
+                    Message.prompt('Your opponent has disconnected.');
+
                 // An unknown packet is being handled
                 default:
                     trace('Unknown packet type: ' + Std.string(data.get('type')));

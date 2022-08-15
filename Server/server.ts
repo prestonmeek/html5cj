@@ -1,43 +1,18 @@
 import WebSocket, { WebSocketServer } from 'ws'
 import { v4 as uuid } from 'uuid'
 import random from 'random'
+import { Card, ElementColors, determineRoundWinner, determineMatchWinner } from './game'
+import { removeFromArray } from './util'
+import { Client, sendPacket } from './client'
 
 // If you need to kill all ports: killall -9 node
 
 // Packet structures
-type PacketData = string | Number | Number[]
+export type PacketData = string | Number | Number[]
 
-interface Packet {
+export interface Packet {
     type: string,
     [key: string]: PacketData
-}
-
-// Card structure
-interface Card {
-    indexInDeck: Number,
-    power: Number,
-    element: string,
-    color: string
-}
-
-// Element colors structure
-// This keeps track of the unique colors for each element
-// Since the colors are unique and the order does not matter, we use a set here
-interface ElementColors {
-    'fire':  Set<string>,
-    'water': Set<string>,
-    'snow':  Set<string>
-}
-
-// Extend the WebSocket type with any optional parameters we may need
-interface Client extends WebSocket {
-    username: string,
-    deck: Array<Number>,
-    ready: boolean,
-    index: Number,
-    roomID: string,
-    cardChoice: Card | null,
-    elementColors: ElementColors
 }
 
 class Server extends WebSocketServer {
@@ -71,9 +46,16 @@ class Server extends WebSocketServer {
             ws.on('message', (packet: string) => this.handlePacket(ws, packet))
 
             ws.on('close', () => {
-                // TODO: remove clients in rooms from rooms, not the queue array (since they left the queue)
-                removeFromArray(this.queue, ws)
-                console.log(`Removed disconnected client from queue. Length: ${this.queue.length}`)
+                if (ws.roomID != null) {
+                    removeFromArray(this.rooms[ws.roomID], ws)
+
+                    // If there is still another client in this room, tell them their opponent has disconnected
+                    if (this.rooms[ws.roomID].length == 1)
+                        this.broadcastToRoom('enemy disconnected', ws.roomID)
+                } else
+                    removeFromArray(this.queue, ws)
+
+                console.log(`Removed disconnected client. Queue length: ${this.queue.length}`)
             })
 
             // handling client connection error
@@ -83,26 +65,13 @@ class Server extends WebSocketServer {
         })
     }
 
-    sendPacket(ws: Client, type: string, args?: { [key: string]: PacketData }): void {
-        // Join the type of the packet with its arguments
-        // Same as Object.assign(), just a bit more of a modern approach ig
-        let data: Packet = { 
-            ...{ 'type': type },
-            ...args
-        }
-
-        ws.send(
-            JSON.stringify(data)
-        )
-    }
-
     broadcastToQueue(type: string, args?: { [key: string]: PacketData }): void {
-        this.queue.forEach(ws => this.sendPacket(ws, type, args))
+        this.queue.forEach(ws => sendPacket(ws, type, args))
     }
 
     broadcastToRoom(type: string, roomID: string, args?: { [key: string]: PacketData }): void {
         if (roomID in this.rooms)
-            this.rooms[roomID].forEach(ws => this.sendPacket(ws, type, args))
+            this.rooms[roomID].forEach(ws => sendPacket(ws, type, args))
     }
 
     handlePacket(ws: Client, packet: string) {
@@ -120,7 +89,7 @@ class Server extends WebSocketServer {
         // This shouldn't be an issue, though, as this is checked in each packet handler when it is used
         let otherClient: Client = ws
 
-        if (ws.roomID != null)
+        if (ws.roomID != null && this.rooms[ws.roomID].length == 2)
             // Get the other client based on the room index of the current client
             // If the current client's index is 0, the other client's is 1, and vice versa
             otherClient = this.rooms[ws.roomID][ws.index == 1 ? 0 : 1]
@@ -157,13 +126,13 @@ class Server extends WebSocketServer {
                     this.rooms[roomID] = [...this.queue]
                     this.queue = []
 
-                    this.sendPacket(client1, 'begin match', { 
+                    sendPacket(client1, 'begin match', { 
                         'username': client2.username,
                         'deck': client2.deck,
                         'room ID': roomID
                     })
 
-                    this.sendPacket(client2, 'begin match', { 
+                    sendPacket(client2, 'begin match', { 
                         'username': client1.username,
                         'deck': client1.deck,
                         'room ID': roomID
@@ -222,7 +191,7 @@ class Server extends WebSocketServer {
                 const otherColor: string   = otherClient.cardChoice?.color as string
 
                 // Show the other client that a card has been selected by the first client
-                this.sendPacket(otherClient, 'show card selection', { 'index in deck': ws.cardChoice.indexInDeck })
+                sendPacket(otherClient, 'show card selection', { 'index in deck': ws.cardChoice.indexInDeck })
 
                 // If both clients have selected a card, we need to figure out who won
                 if (ws.cardChoice != null && otherClient.cardChoice != null) {
@@ -239,11 +208,11 @@ class Server extends WebSocketServer {
                         const colors: Set<string> = ws.elementColors[element]
                         colors.add(color)
 
-                        this.sendPacket(ws, 'round over', {
+                        sendPacket(ws, 'round over', {
                             'result': 'winner'
                         })
 
-                        this.sendPacket(otherClient, 'round over', {
+                        sendPacket(otherClient, 'round over', {
                             'result': 'loser'
                         })
                     } else if (winner == 'other client') {
@@ -251,11 +220,11 @@ class Server extends WebSocketServer {
                         const colors: Set<string> = otherClient.elementColors[otherElement]
                         colors.add(otherColor)
 
-                        this.sendPacket(otherClient, 'round over', {
+                        sendPacket(otherClient, 'round over', {
                             'result': 'winner'
                         })
 
-                        this.sendPacket(ws, 'round over', {
+                        sendPacket(ws, 'round over', {
                             'result': 'loser'
                         })
                     } else if (winner == 'tie') {
@@ -293,12 +262,12 @@ class Server extends WebSocketServer {
                     const clientCardIndex: Number      = random.int(0, 6)
                     const otherClientCardIndex: Number = random.int(0, 6)
 
-                    this.sendPacket(ws, 'resume card selection', {
+                    sendPacket(ws, 'resume card selection', {
                         'new client card index': clientCardIndex,
                         'new other client card index': otherClientCardIndex
                     })
                     
-                    this.sendPacket(otherClient, 'resume card selection', {
+                    sendPacket(otherClient, 'resume card selection', {
                         'new client card index': otherClientCardIndex,
                         'new other client card index': clientCardIndex
                     })
@@ -311,103 +280,6 @@ class Server extends WebSocketServer {
                 console.warn('Unhandled packet type: ' + data['type'])
         }
     }
-}
-
-function removeFromArray<T>(array: T[], value: T) {
-    var idx = array.indexOf(value)
-
-    if (idx !== -1)
-        array.splice(idx, 1)
-    
-    return array
-}
-
-// Returns a string of the result of the round
-function determineRoundWinner(client: Card, otherClient: Card) : string {
-    // Make sure the elements passed in are valid
-    let validElements: string[] = ['fire', 'water', 'snow']
-
-    if (!(validElements.includes(client.element) && validElements.includes(otherClient.element))) {
-        console.warn('Invalid element detected when trying to determine the winner')
-        return 'ERROR'
-    }
-
-    // If the two clients used the same element, go by the power
-    if (client.element == otherClient.element) {
-        // If the clients have equal power cards AND equal power elements, return a tie
-        // If the client has a greater power card, return true
-        // Otherwise, return false
-        if (client.power == otherClient.power)
-            return 'tie'
-        else
-            return client.power > otherClient.power ? 'client' : 'other client'
-    } else {
-        // Use a switch statement with the two elements joined together
-        // The client comes first, then the other client
-        // We will then use string matching for every possible remaining case (6, since we already handled same element cases)
-        switch (`${client.element} ${otherClient.element}`) {
-            case 'fire water':
-                return 'other client'
-
-            case 'fire snow':
-                return 'client'
-
-            case 'water snow':
-                return 'other client'
-
-            case 'water fire':
-                return 'client'
-
-            case 'snow fire':
-                return 'other client'
-
-            case 'snow water':
-                return 'client'
-        }
-    }
-
-    // Default return
-    console.warn('No winner found when trying to determine the winner')
-    return 'ERROR'
-}
-
-// Returns a boolean saying if the passed-in card data would constitute winning the match
-function determineMatchWinner(elements: ElementColors) : boolean {
-    console.log(elements)
-    // The first check for determining a winner is if there are three colors in any element's set
-    // Since the set will only have unique colors, we don't have to bother checking this ourselves
-    // The second check for determing a winner is if there is a combination of fire, water, and snow with DIFFERENT colors
-    // The second check is definitely the more complicated one
-
-    // We use a set with the colors being used for the winning combination
-    const winningColors: Set<string> = new Set()
-
-    for (const element in elements) {
-        // Get the colors set for the specific element
-        const colors: Set<string> = elements[element]
-
-        // If its length is 3 or more (it should never be greater; this is just for safety purposes), we can immediately return true
-        if (colors.size >= 3)
-            return true
-
-        for (const color of colors) {
-            // If the set does not have the current color, add it and break from this loop
-            // We only want to use one color for each element, so we have to break after adding one
-            if (!winningColors.has(color)) {
-                winningColors.add(color)
-                break
-            }
-        }
-    }
-
-    console.log(winningColors)
-
-    // If a combination of exactly three elements with unique colors was found, return true
-    if (winningColors.size == 3)
-        return true
-
-    // Return false by default
-    return false
 }
 
 
